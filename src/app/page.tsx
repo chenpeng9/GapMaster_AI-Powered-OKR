@@ -12,18 +12,16 @@ import { AnalyticsView } from "@/components/AnalyticsView"
 type OkrDeleteType = { type: "objective" | "kr"; id: number }
 
 export default function GapYearPilotDashboard() {
+  // --- 基础状态 ---
   const [capture, setCapture] = useState("")
   const [feed, setFeed] = useState<any[]>([])
   const [judging, setJudging] = useState(false)
   const [loadingFeed, setLoadingFeed] = useState(true)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
-  const [objectives, setObjectives] = useState<any[] | undefined>(undefined)
-
-  // OKR Strategy Tab 状态
+  const [objectives, setObjectives] = useState<any[]>([])
+  
+  // --- OKR 管理状态 ---
   const [okrLoading, setOkrLoading] = useState(false)
   const [okrError, setOkrError] = useState<string | null>(null)
-  const [objectivesList, setObjectivesList] = useState<any[]>([])
   const [creatingObjective, setCreatingObjective] = useState(false)
   const [newObjectiveTitle, setNewObjectiveTitle] = useState("")
   const [newObjectiveQuarter, setNewObjectiveQuarter] = useState("")
@@ -35,56 +33,41 @@ export default function GapYearPilotDashboard() {
   const [okrDeleteDialog, setOkrDeleteDialog] = useState<OkrDeleteType | null>(null)
   const [okrDeletingId, setOkrDeletingId] = useState<number | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editData, setEditData] = useState<{
-    id: number
-    type: "O" | "KR"
-    title: string
-    target_value?: number
-  } | null>(null)
+  const [editData, setEditData] = useState<any>(null)
   const [editSaving, setEditSaving] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  // 数据拉取
+  // --- 数据初始化 ---
   useEffect(() => {
-    let ignore = false
-    async function fetchFeed() {
-      setLoadingFeed(true)
-      const { data } = await supabase
-        .from("logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-      if (!ignore && data) setFeed(data)
-      setLoadingFeed(false)
-    }
-    fetchFeed()
-    return () => {
-      ignore = true
-    }
+    fetchFeed();
+    fetchObjectivesFull();
   }, [])
+
+  async function fetchFeed() {
+    setLoadingFeed(true)
+    const { data } = await supabase.from("logs").select("*").order("created_at", { ascending: false })
+    if (data) setFeed(data)
+    setLoadingFeed(false)
+  }
 
   async function fetchObjectivesFull() {
     setOkrLoading(true)
-    setOkrError(null)
     try {
       const { data, error } = await supabase
         .from("objectives")
-        .select(`
-          *,
-          key_results (*)
-        `)
-        .order("id", { ascending: false })
+        .select(`*, key_results (*)`)
+        .order("id", { ascending: true }) // 升序排列，确保序号 1, 2, 3 稳定
       if (error) throw error
-      setObjectivesList(data || [])
       setObjectives(data || [])
     } catch (e: any) {
-      setOkrError(e?.message || "加载失败")
+      setOkrError(e?.message || "OKR 加载失败")
+    } finally {
+      setOkrLoading(false)
     }
-    setOkrLoading(false)
   }
 
-  useEffect(() => {
-    fetchObjectivesFull()
-  }, [])
-
+  // --- 核心逻辑：AI 审计与提交 ---
   async function handleSubmit() {
     if (!capture.trim() || judging) return
     setJudging(true)
@@ -94,246 +77,159 @@ export default function GapYearPilotDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: capture.trim(), objectives }),
       })
+      
       const data = await resp.json()
-      const krId = data.kr_id
+      
+      // 1. 自动溯源 Objective (用于 UI 标签和颜色)
+      let mappedObjectiveTitle = "未关联目标";
+      const primaryKrId = data.primary_kr_id;
+      
+      if (primaryKrId && objectives.length > 0) {
+        const objIndex = objectives.findIndex(obj => 
+          obj.key_results?.some((kr: any) => kr.id === primaryKrId)
+        );
+        if (objIndex !== -1) {
+          mappedObjectiveTitle = `Objective ${objIndex + 1}: ${objectives[objIndex].title}`;
+        }
+      }
+
+      // 2. 写入日志（使用 AI 净化后的 analysis 作为理由）
       const { data: insertedRows, error } = await supabase
         .from("logs")
-        .insert([
-          {
-            content: capture.trim(),
-            score: data.score,
-            category: data.category,
-            reason: data.reason,
-            topic: data.topic,
-            kr_id: krId,
-          },
-        ])
+        .insert([{
+          content: capture.trim(),
+          score: data.score,
+          category: data.category,
+          reason: data.analysis, 
+          topic: mappedObjectiveTitle,
+          kr_id: primaryKrId,
+        }])
         .select()
+
       if (!error && insertedRows && insertedRows.length) {
         setFeed((prev) => [insertedRows[0], ...prev])
-        if (
-          krId !== null &&
-          typeof krId !== "undefined" &&
-          Number(data.score) >= 6
-        ) {
-          try {
-            const { data: krRows, error: krFetchError } = await supabase
+
+        // 3. 严格审计加分：只有出现在 achieved_kr_ids 中的 KR 才执行进度 +1
+        if (data.achieved_kr_ids && data.achieved_kr_ids.length > 0) {
+          let hasRealProgress = false;
+          for (const targetKrId of data.achieved_kr_ids) {
+            const { data: krRows } = await supabase
               .from("key_results")
-              .select("*")
-              .eq("id", krId)
-              .maybeSingle()
-            if (krRows && !krFetchError) {
-              const curr =
-                typeof krRows.current_value === "number"
-                  ? krRows.current_value
-                  : 0
-              const delta =
-                typeof data.contribution === "number" && !isNaN(data.contribution)
-                  ? data.contribution
-                  : 1
+              .select("current_value")
+              .eq("id", targetKrId)
+              .maybeSingle();
+
+            if (krRows) {
               await supabase
                 .from("key_results")
-                .update({ current_value: curr + delta })
-                .eq("id", krId)
-              await fetchObjectivesFull()
+                .update({ current_value: (krRows.current_value || 0) + 1 })
+                .eq("id", targetKrId);
+              hasRealProgress = true;
             }
-          } catch (e) {
-            // ignore kr update errors for now
           }
+          if (hasRealProgress) await fetchObjectivesFull(); // 仅在有变动时刷新 Dashboard
         }
       }
       setCapture("")
     } catch (e) {
-      // 错误处理略
+      console.error("Submission error:", e);
     } finally {
       setJudging(false)
     }
   }
 
+  // --- 辅助管理函数 ---
   async function handleDelete() {
     if (deletingId || itemToDelete == null) return
     setDeletingId(itemToDelete)
     try {
       const { error } = await supabase.from("logs").delete().eq("id", itemToDelete)
-      if (!error) {
-        setFeed((prev) => prev.filter((entry) => entry.id !== itemToDelete))
-      }
+      if (!error) setFeed((prev) => prev.filter((entry) => entry.id !== itemToDelete))
     } finally {
-      setDeletingId(null)
-      setItemToDelete(null)
+      setDeletingId(null); setItemToDelete(null);
     }
   }
 
   async function handleDeleteObjectiveConfirmed(id: number) {
-    if (!id) return
     setOkrDeletingId(id)
-    try {
-      await supabase.from("objectives").delete().eq("id", id)
-      fetchObjectivesFull()
-    } finally {
-      setOkrDeleteDialog(null)
-      setOkrDeletingId(null)
-    }
+    try { 
+      await supabase.from("objectives").delete().eq("id", id); 
+      await fetchObjectivesFull();
+    } finally { setOkrDeleteDialog(null); setOkrDeletingId(null); }
   }
 
   async function handleDeleteKRConfirmed(id: number) {
-    if (!id) return
     setOkrDeletingId(id)
-    try {
-      await supabase.from("key_results").delete().eq("id", id)
-      fetchObjectivesFull()
-    } finally {
-      setOkrDeleteDialog(null)
-      setOkrDeletingId(null)
-    }
+    try { 
+      await supabase.from("key_results").delete().eq("id", id); 
+      await fetchObjectivesFull();
+    } finally { setOkrDeleteDialog(null); setOkrDeletingId(null); }
   }
 
   function openEditObjective(obj: any) {
-    setEditData({
-      id: obj.id,
-      type: "O",
-      title: obj.title || "",
-    })
-    setEditDialogOpen(true)
+    setEditData({ id: obj.id, type: "O", title: obj.title || "" });
+    setEditDialogOpen(true);
   }
 
   function openEditKR(kr: any) {
-    setEditData({
-      id: kr.id,
-      type: "KR",
-      title: kr.title || "",
-      target_value:
-        typeof kr.target_value === "number"
-          ? kr.target_value
-          : kr.target_value != null && !isNaN(Number(kr.target_value))
-            ? Number(kr.target_value)
-            : undefined,
-    })
-    setEditDialogOpen(true)
+    setEditData({ id: kr.id, type: "KR", title: kr.title || "", target_value: Number(kr.target_value) });
+    setEditDialogOpen(true);
   }
 
   async function handleEditDialogSave() {
     if (!editData) return
     setEditSaving(true)
     try {
-      if (editData.type === "O") {
-        const updateObj: any = { title: (editData.title || "").trim() }
-        if (!updateObj.title) return
-        await supabase
-          .from("objectives")
-          .update(updateObj)
-          .eq("id", editData.id)
-      } else if (editData.type === "KR") {
-        const updateObj: any = { title: (editData.title || "").trim() }
-        if (
-          typeof editData.target_value !== "undefined" &&
-          editData.target_value !== null
-        ) {
-          updateObj.target_value = Number(editData.target_value)
-        }
-        if (!updateObj.title) return
-        await supabase
-          .from("key_results")
-          .update(updateObj)
-          .eq("id", editData.id)
-      }
-      setEditDialogOpen(false)
-      setEditData(null)
-      fetchObjectivesFull()
-    } finally {
-      setEditSaving(false)
-    }
+      const table = editData.type === "O" ? "objectives" : "key_results"
+      const payload: any = { title: editData.title.trim() }
+      if (editData.type === "KR") payload.target_value = editData.target_value
+      await supabase.from(table).update(payload).eq("id", editData.id)
+      setEditDialogOpen(false); await fetchObjectivesFull();
+    } finally { setEditSaving(false); }
   }
 
   async function handleCreateObjective(e?: React.FormEvent) {
-    if (e) e.preventDefault()
-    if (!newObjectiveTitle.trim() || !newObjectiveQuarter) return
-    setCreatingObjective(true)
+    if (e) e.preventDefault();
+    setCreatingObjective(true);
     try {
-      const { error } = await supabase
-        .from("objectives")
-        .insert([
-          { title: newObjectiveTitle.trim(), quarter: newObjectiveQuarter.trim() },
-        ])
-        .select()
-      if (!error) {
-        setNewObjectiveTitle("")
-        setNewObjectiveQuarter("")
-        fetchObjectivesFull()
-      }
-    } finally {
-      setCreatingObjective(false)
-    }
+      await supabase.from("objectives").insert([{ title: newObjectiveTitle.trim(), quarter: newObjectiveQuarter.trim() }]);
+      setNewObjectiveTitle(""); setNewObjectiveQuarter(""); await fetchObjectivesFull();
+    } finally { setCreatingObjective(false); }
   }
 
   async function handleAddKeyResult(e?: React.FormEvent) {
-    if (e) e.preventDefault()
-    if (
-      !krForObjectiveId ||
-      !keyResultTitle.trim() ||
-      !keyResultTarget.trim() ||
-      !keyResultUnit.trim()
-    )
-      return
-    setAddingKeyResult(true)
+    if (e) e.preventDefault();
+    setAddingKeyResult(true);
     try {
-      const { error } = await supabase
-        .from("key_results")
-        .insert([
-          {
-            objective_id: krForObjectiveId,
-            title: keyResultTitle.trim(),
-            target_value: Number(keyResultTarget),
-            unit: keyResultUnit.trim(),
-          },
-        ])
-        .select()
-      if (!error) {
-        setKeyResultTitle("")
-        setKeyResultTarget("")
-        setKeyResultUnit("")
-        setKrForObjectiveId(null)
-        fetchObjectivesFull()
-      }
-    } finally {
-      setAddingKeyResult(false)
-    }
+      await supabase.from("key_results").insert([{ objective_id: krForObjectiveId, title: keyResultTitle.trim(), target_value: Number(keyResultTarget), unit: keyResultUnit.trim() }]);
+      setKeyResultTitle(""); setKeyResultTarget(""); setKeyResultUnit(""); setKrForObjectiveId(null); await fetchObjectivesFull();
+    } finally { setAddingKeyResult(false); }
   }
 
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <header className="mb-8">
+        <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Target className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              GapMaster
-            </h1>
-            <Badge variant="secondary" className="font-mono text-xs tracking-wide">
-              MVP
-            </Badge>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">GapMaster</h1>
+            <Badge variant="secondary" className="font-mono text-xs tracking-wide">MVP</Badge>
           </div>
         </header>
 
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList className="mb-8">
-            <TabsTrigger value="dashboard" className="font-semibold text-base">
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="okr" className="font-semibold text-base">
-              OKR Strategy
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="font-semibold text-base">
-              Analytics
-            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="font-semibold text-base">Dashboard</TabsTrigger>
+            <TabsTrigger value="okr" className="font-semibold text-base">OKR Strategy</TabsTrigger>
+            <TabsTrigger value="analytics" className="font-semibold text-base">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
             <DashboardView
-              objectivesList={objectivesList}
-              objectives={objectives || []}
+              objectivesList={objectives} // 传入最新的 objectives 列表
+              objectives={objectives}
               feed={feed}
               loadingFeed={loadingFeed}
               capture={capture}
@@ -349,7 +245,7 @@ export default function GapYearPilotDashboard() {
 
           <TabsContent value="okr">
             <OKRStrategyView
-              objectivesList={objectivesList}
+              objectivesList={objectives}
               okrLoading={okrLoading}
               okrError={okrError}
               creatingObjective={creatingObjective}
@@ -385,7 +281,7 @@ export default function GapYearPilotDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <AnalyticsView feed={feed} objectives={objectives || []} />
+            <AnalyticsView feed={feed} objectives={objectives} />
           </TabsContent>
         </Tabs>
       </div>

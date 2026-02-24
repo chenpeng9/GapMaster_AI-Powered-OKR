@@ -14,6 +14,7 @@ import {
   CalendarDays,
   Trash2,
   CheckCircle,
+  Target, // 引入靶心图标
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -175,7 +176,6 @@ export function DashboardView({
                       }
                     }}
                   >
-                    {/* --- Objective 标题行响应式改造 --- */}
                     <div className="flex flex-col md:flex-row md:items-center items-start gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs text-muted-foreground shrink-0">
@@ -364,74 +364,77 @@ export function DashboardView({
       </section>
 
       {/* Recent Feed */}
-      <section>
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Recent Feed
-        </h2>
-        <div className="flex flex-col gap-3">
-          {loadingFeed ? (
-            <FancyLoader text="Loading entries…" />
-          ) : filteredFeed.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12 text-sm">
-              No entries yet.
-            </div>
-          ) : (
-            filteredFeed.map((entry) => {
-              const colors = getScoreColor(entry.score)
-              const krTitle = getKRTitleById(objectives, entry.kr_id)
-              return (
-                <div
-                  key={entry.id}
-                  className={`relative rounded-lg border ${colors.border} ${colors.bg} p-4`}
+      {/* Recent Feed 部分的代码修改 */}
+      {filteredFeed.map((entry) => {
+        const scoreColors = getScoreColor(entry.score);
+        
+        // 1. 动态寻找该日志所属的 Objective 及其索引
+        const objIndex = objectives?.findIndex((obj) =>
+          obj.key_results?.some((kr: any) => kr.id === entry.kr_id)
+        );
+
+        // 2. 定义 Objective 专属配色方案 (与进度条保持一致)
+        const objThemes = [
+          { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-500" },
+          { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", icon: "text-green-500" },
+          { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "text-amber-500" },
+          { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "text-violet-500" },
+        ];
+
+        // 3. 如果找不到目标，使用灰色兜底
+        const theme = objIndex !== -1 && objIndex !== undefined 
+          ? objThemes[objIndex % objThemes.length] 
+          : { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-600", icon: "text-gray-400" };
+
+        const displayTitle = entry.topic || getKRTitleById(objectives, entry.kr_id) || "未关联目标";
+
+        return (
+          <div key={entry.id} className={`relative rounded-lg border ${scoreColors.border} ${scoreColors.bg} p-4`}>
+            <div className="flex flex-wrap items-center gap-2 w-full mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${scoreColors.badgeBg} text-xs font-bold ${scoreColors.text} shrink-0`}>
+                  {entry.score}
+                </span>
+                
+                {/* --- 动态变色的 Objective 标签 --- */}
+                <Badge
+                  className={`h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[200px] sm:max-w-none shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}
                 >
-                  <div className="flex flex-wrap items-center gap-2 w-full mb-3">
-                    {/* 左侧（评分 + KR标签）：核心区 */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${colors.badgeBg} text-xs font-bold ${colors.text} shrink-0`}
-                      >
-                        {entry.score}
-                      </span>
-                      <Badge
-                        className="h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[180px] sm:max-w-none bg-gray-100 border-gray-300 text-gray-700"
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                      >
-                        <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="ml-1 truncate">{krTitle ? krTitle : "未关联 OKR"}</span>
-                      </Badge>
-                    </div>
-                    {/* 右侧（日期 + 删除）：辅助区 */}
-                    <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
-                        {formatDate(entry.created_at) || formatDate(entry.date)}
-                      </span>
-                      <button
-                        title="删除"
-                        aria-label="删除"
-                        onClick={() => onItemToDeleteChange(entry.id)}
-                        disabled={deletingId === entry.id}
-                        className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
-                        style={{ lineHeight: 0 }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
-                  {(entry.category || entry.reason) && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {entry.category && <span className="font-semibold">{entry.category}</span>}
-                      {entry.category && entry.reason && <span> – </span>}
-                      {entry.reason}
-                    </p>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </section>
+                  <Target className={`h-3.5 w-3.5 flex-shrink-0 ${theme.icon}`} />
+                  <span className="ml-1 truncate font-semibold">
+                    {displayTitle}
+                  </span>
+                </Badge>
+              </div>
+              
+              {/* 日期和删除按钮部分保持不变 */}
+              <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3 w-3" />
+                  {formatDate(entry.created_at) || formatDate(entry.date)}
+                </span>
+                <button
+                  onClick={() => onItemToDeleteChange(entry.id)}
+                  className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
+            
+            {/* AI 分析部分保持不变 */}
+            {(entry.category || entry.reason) && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {entry.category && <span className="font-semibold">{entry.category}</span>}
+                {entry.category && entry.reason && <span> – </span>}
+                {entry.reason}
+              </p>
+            )}
+          </div>
+        );
+      })}
 
       {/* Delete confirmation Dialog */}
       <Dialog open={itemToDelete !== null} onOpenChange={(open) => !open && onItemToDeleteChange(null)}>
