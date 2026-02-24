@@ -384,30 +384,39 @@ export function DashboardView({
                   key={entry.id}
                   className={`relative rounded-lg border ${colors.border} ${colors.bg} p-4`}
                 >
-                  <button
-                    title="删除"
-                    aria-label="删除"
-                    onClick={() => onItemToDeleteChange(entry.id)}
-                    disabled={deletingId === entry.id}
-                    className={`absolute right-3 top-3 ${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
-                    style={{ lineHeight: 0 }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  <div className="mb-2 flex items-center gap-2.5">
-                    <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${colors.badgeBg} text-xs font-bold ${colors.text}`}
-                    >
-                      {entry.score}
-                    </span>
-                    <Badge className="h-7 px-2 ml-1 rounded-full border font-normal text-xs flex items-center gap-1 min-w-[80px] bg-gray-100 border-gray-300 text-gray-700">
-                      <FileText className="h-4 w-4 text-gray-400" />
-                      <span className="ml-1">{krTitle ? krTitle : "未关联 OKR"}</span>
-                    </Badge>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CalendarDays className="h-3 w-3" />
-                      {formatDate(entry.created_at) || formatDate(entry.date)}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2 w-full mb-3">
+                    {/* 左侧（评分 + KR标签）：核心区 */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${colors.badgeBg} text-xs font-bold ${colors.text} shrink-0`}
+                      >
+                        {entry.score}
+                      </span>
+                      <Badge
+                        className="h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[180px] sm:max-w-none bg-gray-100 border-gray-300 text-gray-700"
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                      >
+                        <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="ml-1 truncate">{krTitle ? krTitle : "未关联 OKR"}</span>
+                      </Badge>
+                    </div>
+                    {/* 右侧（日期 + 删除）：辅助区 */}
+                    <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {formatDate(entry.created_at) || formatDate(entry.date)}
+                      </span>
+                      <button
+                        title="删除"
+                        aria-label="删除"
+                        onClick={() => onItemToDeleteChange(entry.id)}
+                        disabled={deletingId === entry.id}
+                        className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
+                        style={{ lineHeight: 0 }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
                   {(entry.category || entry.reason) && (

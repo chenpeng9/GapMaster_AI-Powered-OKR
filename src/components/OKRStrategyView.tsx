@@ -30,7 +30,7 @@ const OKR_THEME_COLORS = [
     border: "border-blue-300",
     bg: "bg-blue-50/60",
     badge: "bg-blue-100 text-blue-700",
-    icon: (props: any) => <Target {...props} className="w-4 h-4 text-blue-500" />,
+    icon: (props: any) => <Target {...props} className={`w-[16px] h-[16px] sm:w-4 sm:h-4 text-blue-500 ${props.className || ''}`} />,
     krIconBg: "bg-blue-200",
     pill: "bg-blue-100/80 text-blue-700 border border-blue-200/50",
   },
@@ -39,7 +39,7 @@ const OKR_THEME_COLORS = [
     border: "border-green-300",
     bg: "bg-green-50/60",
     badge: "bg-green-100 text-green-700",
-    icon: (props: any) => <ArrowRight {...props} className="w-4 h-4 text-green-500" />,
+    icon: (props: any) => <ArrowRight {...props} className={`w-[16px] h-[16px] sm:w-4 sm:h-4 text-green-500 ${props.className || ''}`} />,
     krIconBg: "bg-green-200",
     pill: "bg-green-100/80 text-green-700 border border-green-200/50",
   },
@@ -48,7 +48,7 @@ const OKR_THEME_COLORS = [
     border: "border-amber-300",
     bg: "bg-amber-50/60",
     badge: "bg-amber-100 text-amber-700",
-    icon: (props: any) => <Target {...props} className="w-4 h-4 text-amber-500" />,
+    icon: (props: any) => <Target {...props} className={`w-[16px] h-[16px] sm:w-4 sm:h-4 text-amber-500 ${props.className || ''}`} />,
     krIconBg: "bg-amber-200",
     pill: "bg-amber-100/80 text-amber-700 border border-amber-200/50",
   },
@@ -57,7 +57,7 @@ const OKR_THEME_COLORS = [
     border: "border-violet-300",
     bg: "bg-violet-50/60",
     badge: "bg-violet-100 text-violet-700",
-    icon: (props: any) => <Square {...props} className="w-4 h-4 text-violet-500" />,
+    icon: (props: any) => <Square {...props} className={`w-[16px] h-[16px] sm:w-4 sm:h-4 text-violet-500 ${props.className || ''}`} />,
     krIconBg: "bg-violet-200",
     pill: "bg-violet-100/80 text-violet-700 border border-violet-200/50",
   },
@@ -66,7 +66,7 @@ const OKR_THEME_COLORS = [
     border: "border-rose-300",
     bg: "bg-rose-50/60",
     badge: "bg-rose-100 text-rose-700",
-    icon: (props: any) => <ArrowRight {...props} className="w-4 h-4 text-rose-400" />,
+    icon: (props: any) => <ArrowRight {...props} className={`w-[16px] h-[16px] sm:w-4 sm:h-4 text-rose-400 ${props.className || ''}`} />,
     krIconBg: "bg-rose-200",
     pill: "bg-rose-100/80 text-rose-700 border border-rose-200/50",
   },
@@ -388,13 +388,13 @@ export function OKRStrategyView({
 
       {/* OKR list */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">当前 Objectives & Key Results</h2>
+        <h2 className="text-lg font-semibold mb-2">当前 Objectives & Key Results</h2>
         {okrLoading ? (
           <FancyLoader text="加载中..." />
         ) : okrError ? (
           <div className="p-4 text-destructive bg-destructive/10 rounded">{okrError}</div>
         ) : (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col space-y-3">
             {objectivesList.length === 0 ? (
               <div className="text-sm text-muted-foreground py-12 text-center">暂无 OKR</div>
             ) : (
@@ -403,120 +403,108 @@ export function OKRStrategyView({
                 return (
                   <Card
                     key={obj.id}
-                    className={`border-2 ${theme.border} ${theme.bg} shadow-sm rounded-xl transition`}
+                    className={`border ${theme.border} ${theme.bg} shadow-sm rounded-xl transition p-3.5`}
                   >
-                    <CardHeader>
-                      <CardTitle className="text-base">
-                        {/* Objective 标题弹性排版开始 */}
-                        <div className="flex flex-wrap items-start gap-y-3 gap-x-4">
-                          <span className="flex-1 min-w-[200px] break-words whitespace-normal font-bold text-lg">
-                            {`Objective ${idx + 1}: `}
-                            {obj.title}
+                    <CardHeader className="p-0 mb-0">
+                      <CardTitle>
+                        {/* 1. Objective 标题与右侧信息容器：严谨的左右分布 */}
+                        <div className="flex flex-row items-start justify-between gap-3 w-full">
+                          <span className="flex-1 text-base font-bold leading-snug break-words whitespace-normal text-gray-900">
+                            {`Objective ${idx + 1}: `}{obj.title}
                           </span>
-                          <div className="flex items-center gap-2 shrink-0 ml-auto">
+                          {/* 右侧始终靠右并且对齐到顶部 */}
+                          <div className="flex items-center gap-1.5 shrink-0 ml-auto mt-0.5">
                             {obj.quarter && (
                               <span
-                                className={`rounded-full px-2 py-0.5 font-mono text-xs font-semibold border ${theme.badge} border-opacity-40 border-transparent`}
+                                className={`rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold border ${theme.badge} border-opacity-40 border-transparent`}
                               >
                                 {obj.quarter}
                               </span>
                             )}
                             <button
                               title="编辑"
-                              aria-label="编辑Objective"
                               type="button"
-                              className={`${actionBtnBaseClass} ${editBtnStates(false)}`}
-                              style={{ lineHeight: 0 }}
+                              className={`${actionBtnBaseClass} ${editBtnStates(false)} p-[5px]`}
                               onClick={() => onOpenEditObjective(obj)}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               title="删除"
-                              aria-label="删除Objective"
                               type="button"
                               className={`${actionBtnBaseClass} ${deleteBtnStates(
                                 okrDeletingId === obj.id && okrDeleteDialog?.type === "objective"
-                              )}`}
-                              style={{ lineHeight: 0 }}
+                              )} p-[5px]`}
                               onClick={() => onOkrDeleteDialogChange({ type: "objective", id: obj.id })}
-                              disabled={
-                                okrDeletingId === obj.id && okrDeleteDialog?.type === "objective"
-                              }
+                              disabled={okrDeletingId === obj.id}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                        {/* Objective 标题弹性排版结束 */}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+
+                    <CardContent className="p-0">
                       {obj.key_results && obj.key_results.length > 0 ? (
-                        <ul className="flex flex-col gap-2 ml-2 py-1">
+                        <ul className="flex flex-col gap-0 mt-1">
                           {obj.key_results.map((kr: any, jdx: number) => (
                             <li
                               key={kr.id}
-                              className="flex flex-wrap items-start sm:items-center gap-y-2 gap-x-4 p-2 sm:p-0"
+                              /* 2. KR 结构：Icon 在左侧独立占位，确保绝不串行 */
+                              className="flex items-start gap-2 py-1.5 border-t border-gray-300/30 first:border-0"
                             >
-                              {/* KR 左侧：弹性文本容器 */}
-                              <div className="flex items-start gap-2 flex-1 min-w-[200px]">
-                                <span
-                                  className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${theme.krIconBg} mr-1 mt-0.5 shrink-0`}
-                                  style={{ minWidth: 24, minHeight: 24 }}
-                                >
-                                  {theme.icon({})}
-                                </span>
-                                <span className="break-words whitespace-normal text-sm font-medium">
-                                  {`KR ${jdx + 1}: `}
-                                  {kr.title}
-                                </span>
+                              {/* 强制 Icon 不被挤压且处于首位 */}
+                              <div className="mt-[3px] shrink-0">
+                                {theme.icon({ className: "w-3.5 h-3.5" })}
                               </div>
-                              {/* KR 右侧：弹性操作区 */}
-                              <div className="flex items-center gap-2 shrink-0 ml-auto">
-                                {typeof kr.target_value !== "undefined" &&
-                                  kr.target_value !== null &&
-                                  String(kr.target_value).trim() !== "" && (
-                                    <span
-                                      className={`flex items-center gap-1 font-mono px-3 py-1 rounded-full text-xs ${theme.pill} bg-opacity-70 ml-2`}
-                                    >
-                                      {kr.target_value}
-                                      {kr.unit ? (
-                                        <span className="ml-0.5 font-sans">{kr.unit}</span>
-                                      ) : null}
-                                    </span>
+                              
+                              {/* 3. KR 文本和工具栏放在同一个自适应换行流中 */}
+                              {/* 3. 取消 flex 布局，改用纯文本流式排版 */}
+                              <div className="flex-1 text-[13px] leading-[24px] text-gray-700 break-words">
+                                <span className="font-semibold mr-1">{`KR ${jdx + 1}:`}</span>
+                                {kr.title}
+                                
+                                {/* 关键修复：用 inline-flex 并配合 align-middle，让工具栏像“字符”一样紧随文字末尾 */}
+                                <span className="inline-flex items-center gap-1.5 align-middle ml-2">
+                                  {typeof kr.target_value !== "undefined" &&
+                                    kr.target_value !== null &&
+                                    String(kr.target_value).trim() !== "" && (
+                                      <span
+                                        className={`flex items-center gap-1 font-mono px-1.5 h-[22px] rounded-md text-[11px] font-semibold ${theme.pill}`}
+                                      >
+                                        {kr.target_value}
+                                        {kr.unit ? (
+                                          <span className="ml-0.5 font-sans">{kr.unit}</span>
+                                        ) : null}
+                                      </span>
                                   )}
-                                <button
-                                  title="编辑"
-                                  aria-label="编辑KR"
-                                  type="button"
-                                  className={`${actionBtnBaseClass} ${editBtnStates(false)}`}
-                                  style={{ lineHeight: 0 }}
-                                  onClick={() => onOpenEditKR(kr)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  title="删除"
-                                  aria-label="删除KR"
-                                  type="button"
-                                  className={`${actionBtnBaseClass} ${deleteBtnStates(
-                                    okrDeletingId === kr.id && okrDeleteDialog?.type === "kr"
-                                  )}`}
-                                  style={{ lineHeight: 0 }}
-                                  onClick={() => onOkrDeleteDialogChange({ type: "kr", id: kr.id })}
-                                  disabled={
-                                    okrDeletingId === kr.id && okrDeleteDialog?.type === "kr"
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
+                                  <button
+                                    title="编辑"
+                                    type="button"
+                                    className={`${actionBtnBaseClass} ${editBtnStates(false)} p-[4px]`}
+                                    onClick={() => onOpenEditKR(kr)}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    title="删除"
+                                    type="button"
+                                    className={`${actionBtnBaseClass} ${deleteBtnStates(
+                                      okrDeletingId === kr.id && okrDeleteDialog?.type === "kr"
+                                    )} p-[4px]`}
+                                    onClick={() => onOkrDeleteDialogChange({ type: "kr", id: kr.id })}
+                                    disabled={okrDeletingId === kr.id}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </span>
                               </div>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <div className="text-sm text-muted-foreground">无 KR</div>
+                        <div className="text-sm text-muted-foreground px-1 mt-1">无 KR</div>
                       )}
                     </CardContent>
                   </Card>
