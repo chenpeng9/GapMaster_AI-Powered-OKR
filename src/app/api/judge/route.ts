@@ -2,10 +2,16 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
 
-// 【核心修复】强制 Node.js 底层网络引擎走你的 Clash 7890 端口
-const proxyAgent = new ProxyAgent("http://127.0.0.1:7890");
-setGlobalDispatcher(proxyAgent);
+// 1. 只有在本地开发环境且明确需要时才开启代理
+if (process.env.NODE_ENV === "development") {
+    console.log("Detected development environment, setting up proxy...");
+    const proxyAgent = new ProxyAgent("http://127.0.0.1:7890");
+    setGlobalDispatcher(proxyAgent);
+  } else {
+    console.log("Detected production environment, connecting directly to Gemini...");
+  }
 
+  // 2. 正常初始化 Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 /**
