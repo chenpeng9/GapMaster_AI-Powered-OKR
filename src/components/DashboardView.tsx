@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,6 +15,8 @@ import {
   Trash2,
   CheckCircle,
   Target, // 引入靶心图标
+  Mic,    // 引入麦克风图标
+  MicOff, // 引入麦克风关闭图标
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -89,6 +91,51 @@ export function DashboardView({
   onDelete,
 }: DashboardViewProps) {
   const [okrFilter, setOkrFilter] = useState<OkrFilterType>({ type: null, id: null })
+
+  // --- 语音识别状态与逻辑 ---
+  const [isListening, setIsListening] = useState(false)
+  const [recognition, setRecognition] = useState<any>(null)
+
+  useEffect(() => {
+    // 确保在浏览器环境下运行
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        const recognitionInstance = new SpeechRecognition()
+        recognitionInstance.lang = 'zh-CN' // 设定为中文
+        recognitionInstance.interimResults = false // 仅返回最终结果，避免文字跳动
+        recognitionInstance.continuous = false // 停顿即停止录音
+
+        recognitionInstance.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript
+          // 如果当前输入框有内容，则加个空格追加；如果为空，直接填入
+          onCaptureChange(capture ? `${capture} ${transcript}` : transcript)
+          setIsListening(false)
+        }
+
+        recognitionInstance.onerror = (event: any) => {
+          console.error("语音识别错误:", event.error)
+          setIsListening(false)
+        }
+
+        recognitionInstance.onend = () => {
+          setIsListening(false)
+        }
+
+        setRecognition(recognitionInstance)
+      }
+    }
+  }, [capture, onCaptureChange])
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognition?.stop()
+    } else {
+      recognition?.start()
+      setIsListening(true)
+    }
+  }
+  // --- 语音逻辑结束 ---
 
   const filteredFeed = useMemo(() => {
     if (!okrFilter.type || !okrFilter.id) return feed
@@ -287,15 +334,35 @@ export function DashboardView({
         </div>
       </section>
 
-      {/* Quick Capture */}
+      {/* Quick Capture (集成语音输入) */}
       <section className="mb-12">
-        <Textarea
-          placeholder="What did you learn or build today?"
-          className="min-h-[120px] resize-none border-border bg-background text-foreground placeholder:text-muted-foreground/60 text-sm leading-relaxed"
-          value={capture}
-          onChange={(e) => onCaptureChange(e.target.value)}
-          disabled={judging}
-        />
+        <div className="relative group">
+          <Textarea
+            placeholder="What did you learn or build today? (点击麦克风可进行中文语音输入...)"
+            className="min-h-[120px] resize-none pr-12 border-border bg-background text-foreground placeholder:text-muted-foreground/60 text-sm leading-relaxed"
+            value={capture}
+            onChange={(e) => onCaptureChange(e.target.value)}
+            disabled={judging}
+          />
+          {/* 麦克风悬浮按钮 */}
+          <button
+            onClick={toggleListening}
+            className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-300 ${
+              isListening ? "bg-red-100 text-red-600 animate-pulse shadow-md" : "text-muted-foreground hover:bg-muted"
+            }`}
+            title={isListening ? "停止录音" : "语音输入"}
+          >
+            {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </button>
+          
+          {/* 录音状态提示 */}
+          {isListening && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+               <span className="flex h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+               <span className="text-[10px] text-red-500 font-bold tracking-tighter uppercase">Listening...</span>
+            </div>
+          )}
+        </div>
         <div className="mt-3 flex justify-end">
           <Button
             size="sm"
@@ -364,77 +431,89 @@ export function DashboardView({
       </section>
 
       {/* Recent Feed */}
-      {/* Recent Feed 部分的代码修改 */}
-      {filteredFeed.map((entry) => {
-        const scoreColors = getScoreColor(entry.score);
-        
-        // 1. 动态寻找该日志所属的 Objective 及其索引
-        const objIndex = objectives?.findIndex((obj) =>
-          obj.key_results?.some((kr: any) => kr.id === entry.kr_id)
-        );
-
-        // 2. 定义 Objective 专属配色方案 (与进度条保持一致)
-        const objThemes = [
-          { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-500" },
-          { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", icon: "text-green-500" },
-          { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "text-amber-500" },
-          { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "text-violet-500" },
-        ];
-
-        // 3. 如果找不到目标，使用灰色兜底
-        const theme = objIndex !== -1 && objIndex !== undefined 
-          ? objThemes[objIndex % objThemes.length] 
-          : { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-600", icon: "text-gray-400" };
-
-        const displayTitle = entry.topic || getKRTitleById(objectives, entry.kr_id) || "未关联目标";
-
-        return (
-          <div key={entry.id} className={`relative rounded-lg border ${scoreColors.border} ${scoreColors.bg} p-4`}>
-            <div className="flex flex-wrap items-center gap-2 w-full mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${scoreColors.badgeBg} text-xs font-bold ${scoreColors.text} shrink-0`}>
-                  {entry.score}
-                </span>
-                
-                {/* --- 动态变色的 Objective 标签 --- */}
-                <Badge
-                  className={`h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[200px] sm:max-w-none shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}
-                >
-                  <Target className={`h-3.5 w-3.5 flex-shrink-0 ${theme.icon}`} />
-                  <span className="ml-1 truncate font-semibold">
-                    {displayTitle}
-                  </span>
-                </Badge>
-              </div>
+      <section>
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Recent Feed
+        </h2>
+        <div className="flex flex-col gap-3">
+          {loadingFeed ? (
+            <FancyLoader text="Loading entries…" />
+          ) : filteredFeed.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12 text-sm">No entries yet.</div>
+          ) : (
+            filteredFeed.map((entry) => {
+              const scoreColors = getScoreColor(entry.score);
               
-              {/* 日期和删除按钮部分保持不变 */}
-              <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
-                <span className="flex items-center gap-1">
-                  <CalendarDays className="h-3 w-3" />
-                  {formatDate(entry.created_at) || formatDate(entry.date)}
-                </span>
-                <button
-                  onClick={() => onItemToDeleteChange(entry.id)}
-                  className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+              // 1. 动态寻找该日志所属的 Objective 及其索引
+              const objIndex = objectives?.findIndex((obj) =>
+                obj.key_results?.some((kr: any) => kr.id === entry.kr_id)
+              );
 
-            <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
-            
-            {/* AI 分析部分保持不变 */}
-            {(entry.category || entry.reason) && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {entry.category && <span className="font-semibold">{entry.category}</span>}
-                {entry.category && entry.reason && <span> – </span>}
-                {entry.reason}
-              </p>
-            )}
-          </div>
-        );
-      })}
+              // 2. 定义 Objective 专属配色方案 (与进度条保持一致)
+              const objThemes = [
+                { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-500" },
+                { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", icon: "text-green-500" },
+                { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "text-amber-500" },
+                { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "text-violet-500" },
+              ];
+
+              // 3. 如果找不到目标，使用灰色兜底
+              const theme = objIndex !== -1 && objIndex !== undefined 
+                ? objThemes[objIndex % objThemes.length] 
+                : { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-600", icon: "text-gray-400" };
+
+              const displayTitle = entry.topic || getKRTitleById(objectives, entry.kr_id) || "未关联目标";
+
+              return (
+                <div key={entry.id} className={`relative rounded-lg border ${scoreColors.border} ${scoreColors.bg} p-4`}>
+                  <div className="flex flex-wrap items-center gap-2 w-full mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${scoreColors.badgeBg} text-xs font-bold ${scoreColors.text} shrink-0`}>
+                        {entry.score}
+                      </span>
+                      
+                      {/* --- 动态变色的 Objective 标签 --- */}
+                      <Badge
+                        className={`h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[200px] sm:max-w-none shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}
+                      >
+                        <Target className={`h-3.5 w-3.5 flex-shrink-0 ${theme.icon}`} />
+                        <span className="ml-1 truncate font-semibold">
+                          {displayTitle}
+                        </span>
+                      </Badge>
+                    </div>
+                    
+                    {/* 日期和删除按钮部分保持不变 */}
+                    <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {formatDate(entry.created_at) || formatDate(entry.date)}
+                      </span>
+                      <button
+                        onClick={() => onItemToDeleteChange(entry.id)}
+                        className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
+                  
+                  {/* AI 分析部分保持不变 */}
+                  {(entry.category || entry.reason) && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {entry.category && <span className="font-semibold">{entry.category}</span>}
+                      {entry.category && entry.reason && <span> – </span>}
+                      {entry.reason}
+                    </p>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
 
       {/* Delete confirmation Dialog */}
       <Dialog open={itemToDelete !== null} onOpenChange={(open) => !open && onItemToDeleteChange(null)}>
