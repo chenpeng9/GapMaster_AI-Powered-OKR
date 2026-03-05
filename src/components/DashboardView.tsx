@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -95,44 +95,102 @@ export function DashboardView({
   // --- 语音识别状态与逻辑 ---
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
+  const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(false)
+  const isManuallyStoppedRef = useRef(false)
 
   useEffect(() => {
     // 确保在浏览器环境下运行
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       if (SpeechRecognition) {
+        setSpeechRecognitionAvailable(true)
         const recognitionInstance = new SpeechRecognition()
         recognitionInstance.lang = 'zh-CN' // 设定为中文
-        recognitionInstance.interimResults = false // 仅返回最终结果，避免文字跳动
-        recognitionInstance.continuous = false // 停顿即停止录音
+        recognitionInstance.interimResults = true // 允许中间结果，实时显示
+        recognitionInstance.continuous = true // 持续录音，不自动停止
 
         recognitionInstance.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript
+          const transcript = Array.from(event.results)
+            .map((result: any) => result[0].transcript)
+            .join('')
           // 如果当前输入框有内容，则加个空格追加；如果为空，直接填入
           onCaptureChange(capture ? `${capture} ${transcript}` : transcript)
-          setIsListening(false)
         }
 
         recognitionInstance.onerror = (event: any) => {
           console.error("语音识别错误:", event.error)
-          setIsListening(false)
+          // 忽略 'no-speech' 错误，这是正常的静音检测
+          if (event.error !== 'no-speech') {
+            setIsListening(false)
+            isManuallyStoppedRef.current = true
+          }
+          // 其他错误（如网络问题、权限拒绝）会停止录音
         }
 
         recognitionInstance.onend = () => {
-          setIsListening(false)
+          // 如果是手动停止的，或者用户主动点击停止，不再重启
+          if (isManuallyStoppedRef.current) {
+            setIsListening(false)
+          } else {
+            // 自动重启，保持持续录音
+            try {
+              recognitionInstance.start()
+            } catch (e) {
+              console.error("重启语音识别失败:", e)
+              setIsListening(false)
+            }
+          }
         }
 
         setRecognition(recognitionInstance)
+      } else {
+        setSpeechRecognitionAvailable(false)
+        console.warn('浏览器不支持 Web Speech API')
       }
     }
-  }, [capture, onCaptureChange])
+  }, [onCaptureChange])
 
   const toggleListening = () => {
     if (isListening) {
+      // 手动停止
       recognition?.stop()
+      isManuallyStoppedRef.current = true
+      setIsListening(false)
     } else {
-      recognition?.start()
-      setIsListening(true)
+      // 启动前先检查浏览器支持
+      if (!speechRecognitionAvailable) {
+        alert('您的浏览器不支持语音识别功能，请使用 Chrome 或 Edge 浏览器。')
+        return
+      }
+      
+      if (!recognition) {
+        alert('语音识别未初始化，请刷新页面重试。')
+        return
+      }
+      
+      // 重置手动停止标志
+      isManuallyStoppedRef.current = false
+      
+      // 移动端需要 HTTPS
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        console.warn('语音识别在移动端需要 HTTPS 环境')
+      }
+      
+      try {
+        recognition.start()
+        setIsListening(true)
+      } catch (error: any) {
+        console.error('启动语音识别失败:', error)
+        // 更详细的错误提示
+        if (error.message?.includes('permission')) {
+          alert('麦克风权限被拒绝，请在浏览器设置中允许麦克风访问。')
+        } else if (error.message?.includes('not-allowed')) {
+          alert('麦克风权限被拒绝，请允许后重试。')
+        } else {
+          alert(`启动失败：${error.message || error}`)
+        }
+        setIsListening(false)
+      }
     }
   }
   // --- 语音逻辑结束 ---
