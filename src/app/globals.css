@@ -2,13 +2,48 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ========== 简约精致设计系统 ========== */
+
+/* 自定义字体 - 使用优雅的字体组合 */
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -47,80 +82,342 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* ========== 浅色主题 - 温暖优雅 ========== */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  /* 主色调 - 温暖的石炭黑 */
+  --background: #FAFAF9;
+  --foreground: #1C1917;
+
+  /* 卡片和弹出层 - 微妙的暖白 */
+  --card: #FFFFFF;
+  --card-foreground: #1C1917;
+  --popover: #FFFFFF;
+  --popover-foreground: #1C1917;
+
+  /* 主色 - 优雅的深青色 */
+  --primary: #0D9488;
+  --primary-foreground: #FFFFFF;
+
+  /* 次要色 - 温暖的灰色 */
+  --secondary: #F5F5F4;
+  --secondary-foreground: #44403C;
+
+  /* muted - 柔和的中性色 */
+  --muted: #F5F5F4;
+  --muted-foreground: #78716C;
+
+  /* 强调色 */
+  --accent: #F5F5F4;
+  --accent-foreground: #1C1917;
+
+  /* 危险色 - 柔和的红色 */
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  /* 边框 - 微妙的暖灰 */
+  --border: #E7E5E4;
+  --input: #E7E5E4;
+  --ring: #0D9488;
+
+  /* 图表配色 - 精致协调 */
+  --chart-1: #0D9488;
+  --chart-2: #F59E0B;
+  --chart-3: #8B5CF6;
+  --chart-4: #EC4899;
+  --chart-5: #6366F1;
+
+  /* 侧边栏 */
+  --sidebar: #FAFAF9;
+  --sidebar-foreground: #1C1917;
+  --sidebar-primary: #0D9488;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F5F5F4;
+  --sidebar-accent-foreground: #44403C;
+  --sidebar-border: #E7E5E4;
+  --sidebar-ring: #0D9488;
+
+  /* 评分颜色 - 更精致 */
+  --score-high: #10B981;
+  --score-medium: #3B82F6;
+  --score-low: #F59E0B;
+  --score-none: #EF4444;
 }
 
+/* ========== 深色主题 - 深邃优雅 ========== */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0C0A09;
+  --foreground: #FAFAF9;
+
+  --card: #1C1917;
+  --card-foreground: #FAFAF9;
+  --popover: #1C1917;
+  --popover-foreground: #FAFAF9;
+
+  --primary: #14B8A6;
+  --primary-foreground: #0C0A09;
+
+  --secondary: #292524;
+  --secondary-foreground: #D6D3D1;
+
+  --muted: #292524;
+  --muted-foreground: #A8A29E;
+
+  --accent: #292524;
+  --accent-foreground: #FAFAF9;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FAFAF9;
+
+  --border: #292524;
+  --input: #292524;
+  --ring: #14B8A6;
+
+  --chart-1: #14B8A6;
+  --chart-2: #FBBF24;
+  --chart-3: #A78BFA;
+  --chart-4: #F472B6;
+  --chart-5: #818CF8;
+
+  --sidebar: #0C0A09;
+  --sidebar-foreground: #FAFAF9;
+  --sidebar-primary: #14B8A6;
+  --sidebar-primary-foreground: #0C0A09;
+  --sidebar-accent: #1C1917;
+  --sidebar-accent-foreground: #D6D3D1;
+  --sidebar-border: #292524;
+  --sidebar-ring: #14B8A6;
+
+  --score-high: #34D399;
+  --score-medium: #60A5FA;
+  --score-low: #FBBF24;
+  --score-none: #F87171;
 }
 
+/* ========== 基础样式 ========== */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/40;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* 更平滑的滚动 */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* 选中文本的高亮 */
+  ::selection {
+    background-color: rgba(13, 148, 136, 0.2);
+    color: inherit;
+  }
+}
+
+/* ========== 动画 ========== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* 应用动画类 */
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 交错动画延迟 */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* ========== 精致阴影 ========== */
+.shadow-elegant {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(13, 148, 136, 0.15);
+}
+
+/* ========== 玻璃态效果 ========== */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .glass {
+  background: rgba(28, 25, 23, 0.7);
+}
+
+/* ========== 渐变背景 ========== */
+.gradient-subtle {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%);
+}
+
+.gradient-radial {
+  background: radial-gradient(ellipse at top, rgba(13, 148, 136, 0.05) 0%, transparent 50%);
+}
+
+/* ========== 评分徽章样式 ========== */
+.score-badge {
+  @apply inline-flex items-center justify-center rounded-md font-semibold text-sm transition-all duration-200;
+}
+
+.score-badge-high {
+  @apply bg-emerald-100 text-emerald-700;
+}
+
+.score-badge-medium {
+  @apply bg-blue-100 text-blue-700;
+}
+
+.score-badge-low {
+  @apply bg-amber-100 text-amber-700;
+}
+
+.score-badge-none {
+  @apply bg-red-100 text-red-700;
+}
+
+.dark .score-badge-high {
+  @apply bg-emerald-900/50 text-emerald-400;
+}
+
+.dark .score-badge-medium {
+  @apply bg-blue-900/50 text-blue-400;
+}
+
+.dark .score-badge-low {
+  @apply bg-amber-900/50 text-amber-400;
+}
+
+.dark .score-badge-none {
+  @apply bg-red-900/50 text-red-400;
+}
+
+/* ========== 进度条样式 ========== */
+.progress-elegant {
+  @apply h-1.5 rounded-full bg-muted overflow-hidden;
+}
+
+.progress-elegant .indicator {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+}
+
+/* ========== 卡片悬停效果 ========== */
+.card-elegant {
+  @apply rounded-xl border border-border/60 bg-card transition-all duration-300;
+}
+
+.card-elegant:hover {
+  @apply border-border shadow-lg;
+}
+
+/* ========== 输入框样式 ========== */
+.input-elegant {
+  @apply rounded-lg border border-input bg-background transition-all duration-200;
+}
+
+.input-elegant:focus {
+  @apply border-primary ring-2 ring-primary/20;
+}
+
+.input-elegant::placeholder {
+  @apply text-muted-foreground/60;
+}
+
+/* ========== 按钮样式 ========== */
+.btn-elegant {
+  @apply rounded-lg font-medium transition-all duration-200;
+}
+
+.btn-elegant:hover {
+  @apply translate-y-[-1px];
+}
+
+.btn-elegant:active {
+  @apply translate-y-0;
+}
+
+/* ========== 标签页样式 ========== */
+.tab-elegant {
+  @apply rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200;
+}
+
+.tab-elegant[data-state="active"] {
+  @apply bg-primary/10 text-primary;
+}
+
+.tab-elegant:hover:not([data-state="active"]) {
+  @apply bg-muted text-foreground;
 }

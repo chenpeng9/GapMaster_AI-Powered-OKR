@@ -7,16 +7,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Send,
-  Flame,
   FileText,
   Monitor,
   Trophy,
   CalendarDays,
   Trash2,
   CheckCircle,
-  Target, // 引入靶心图标
-  Mic,    // 引入麦克风图标
-  MicOff, // 引入麦克风关闭图标
+  Target,
+  Mic,
+  MicOff,
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -267,12 +266,12 @@ export function DashboardView({
               return (
                 <Card
                   key={obj.id}
-                  className={`group border transition-shadow gap-2 ${themeColor.shadow} hover:shadow-sm ${
-                    isObjectiveSelected ? "ring-2 ring-blue-300" : ""
+                  className={`group border border-border/60 shadow-sm hover:shadow-lg transition-all duration-300 ${themeColor.shadow} ${
+                    isObjectiveSelected ? "ring-2 ring-primary/30" : ""
                   }`}
                 >
                   <CardHeader
-                    className="pb-1 cursor-pointer select-none hover:bg-muted/30 rounded-t-lg transition-colors"
+                    className="pb-3 cursor-pointer select-none hover:bg-muted/30 rounded-t-xl transition-all duration-200"
                     onClick={() => {
                       if (isObjectiveSelected) {
                         setOkrFilter({ type: null, id: null })
@@ -396,8 +395,8 @@ export function DashboardView({
       <section className="mb-12">
         <div className="relative group">
           <Textarea
-            placeholder="What did you learn or build today? (点击麦克风可进行中文语音输入...)"
-            className="min-h-[120px] resize-none pr-12 border-border bg-background text-foreground placeholder:text-muted-foreground/60 text-sm leading-relaxed"
+            placeholder="记录今天的工作进展...（点击麦克风支持语音输入）"
+            className="min-h-[140px] resize-none pr-12 border-border/60 bg-card text-foreground placeholder:text-muted-foreground/50 text-sm leading-relaxed rounded-xl shadow-sm focus:shadow-md transition-all duration-300"
             value={capture}
             onChange={(e) => onCaptureChange(e.target.value)}
             disabled={judging}
@@ -405,38 +404,38 @@ export function DashboardView({
           {/* 麦克风悬浮按钮 */}
           <button
             onClick={toggleListening}
-            className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-300 ${
-              isListening ? "bg-red-100 text-red-600 animate-pulse shadow-md" : "text-muted-foreground hover:bg-muted"
+            className={`absolute top-4 right-4 p-2.5 rounded-full transition-all duration-300 ${
+              isListening ? "bg-red-100 text-red-600 animate-pulse shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-110"
             }`}
             title={isListening ? "停止录音" : "语音输入"}
           >
             {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </button>
-          
+
           {/* 录音状态提示 */}
           {isListening && (
-            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 animate-fade-in">
                <span className="flex h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
-               <span className="text-[10px] text-red-500 font-bold tracking-tighter uppercase">Listening...</span>
+               <span className="text-[10px] text-red-500 font-bold tracking-tighter uppercase">正在录音...</span>
             </div>
           )}
         </div>
-        <div className="mt-3 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <Button
             size="sm"
-            className="gap-2"
+            className="gap-2 px-6 rounded-lg bg-primary hover:bg-primary/90 transition-all duration-200 hover:shadow-md"
             onClick={onSubmit}
             disabled={judging || !capture.trim()}
           >
             {judging ? (
               <>
                 <Send className="h-4 w-4 animate-spin" />
-                Judging...
+                分析中...
               </>
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                Submit
+                提交记录
               </>
             )}
           </Button>
@@ -445,44 +444,44 @@ export function DashboardView({
 
       {/* Execution Scoring Legend */}
       <section className="mb-10">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Execution Scoring
+        <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          评分说明
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
-          <div className="flex flex-col gap-0.5 bg-red-50/60 border-l-4 border-red-200 px-3 py-2 rounded-sm">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Flame className="h-3 w-3 text-red-500" />
-              <span className="font-semibold text-sm text-red-600">0–2</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1 bg-red-50/60 border border-red-100/60 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-red-100 text-xs font-bold text-red-600">0-2</span>
+              <span className="font-semibold text-sm text-red-700">无产出</span>
             </div>
-            <div className="text-xs text-red-600/80 leading-tight font-normal">
-              没有任何产出，纯粹的拖延或与目标完全无关的内耗
-            </div>
-          </div>
-          <div className="flex flex-col gap-0.5 bg-muted/40 border-l-4 border-border px-3 py-2 rounded-sm">
-            <div className="flex items-center gap-1 mb-0.5">
-              <FileText className="h-3 w-3 text-muted-foreground" />
-              <span className="font-semibold text-sm text-muted-foreground">3–5</span>
-            </div>
-            <div className="text-xs text-muted-foreground/80 leading-tight font-normal">
-              被动输入（如阅读、调研、规划），但未转化为实质性的交付物
+            <div className="text-xs text-red-600/70 leading-relaxed">
+              纯拖延或与目标无关的内耗
             </div>
           </div>
-          <div className="flex flex-col gap-0.5 bg-blue-50/60 border-l-4 border-blue-200 px-3 py-2 rounded-sm">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Monitor className="h-3 w-3 text-blue-500" />
-              <span className="font-semibold text-sm text-blue-600">6–7</span>
+          <div className="flex flex-col gap-1 bg-muted/40 border border-border/40 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-muted text-xs font-bold text-muted-foreground">3-5</span>
+              <span className="font-semibold text-sm text-muted-foreground">被动输入</span>
             </div>
-            <div className="text-xs text-blue-600/80 leading-tight font-normal">
-              产出了具体的代码、文章或完成了节点任务，直接推动了KR的进度
+            <div className="text-xs text-muted-foreground/70 leading-relaxed">
+              阅读、调研、规划，未产出交付物
             </div>
           </div>
-          <div className="flex flex-col gap-0.5 bg-amber-50/50 border-l-4 border-amber-200 px-3 py-2 rounded-sm">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Trophy className="h-3 w-3 text-amber-500" />
-              <span className="font-semibold text-sm text-amber-600">8–10</span>
+          <div className="flex flex-col gap-1 bg-blue-50/60 border border-blue-100/60 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-xs font-bold text-blue-600">6-7</span>
+              <span className="font-semibold text-sm text-blue-700">有效产出</span>
             </div>
-            <div className="text-xs text-amber-600/80 leading-tight font-normal">
-              极高价值的Alpha突破！如MVP成功上线、斩获真实用户或产生商业收益
+            <div className="text-xs text-blue-600/70 leading-relaxed">
+              产出代码、文章或完成节点任务
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 bg-emerald-50/60 border border-emerald-100/60 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-emerald-100 text-xs font-bold text-emerald-600">8-10</span>
+              <span className="font-semibold text-sm text-emerald-700">高价值突破</span>
+            </div>
+            <div className="text-xs text-emerald-600/70 leading-relaxed">
+              MVP上线、获取用户或商业收益
             </div>
           </div>
         </div>
@@ -490,14 +489,21 @@ export function DashboardView({
 
       {/* Recent Feed */}
       <section>
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Recent Feed
+        <h2 className="mb-5 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          最近的记录
         </h2>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {loadingFeed ? (
             <FancyLoader text="Loading entries…" />
           ) : filteredFeed.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12 text-sm">No entries yet.</div>
+            <div className="text-center text-muted-foreground py-12 text-sm bg-muted/20 rounded-xl border border-dashed border-border/40">
+              <div className="flex flex-col items-center gap-2">
+                <svg className="w-10 h-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>暂无记录，开始你的第一条记录吧</p>
+              </div>
+            </div>
           ) : (
             filteredFeed.map((entry) => {
               const scoreColors = getScoreColor(entry.score);
@@ -523,40 +529,40 @@ export function DashboardView({
               const displayTitle = entry.topic || getKRTitleById(objectives, entry.kr_id) || "未关联目标";
 
               return (
-                <div key={entry.id} className={`relative rounded-lg border ${scoreColors.border} ${scoreColors.bg} p-4`}>
-                  <div className="flex flex-wrap items-center gap-2 w-full mb-3">
+                <div key={entry.id} className={`relative rounded-xl border ${scoreColors.border} ${scoreColors.bg} p-5 transition-all duration-300 hover:shadow-sm animate-fade-in-up`}>
+                  <div className="flex flex-wrap items-center gap-3 w-full mb-4">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${scoreColors.badgeBg} text-xs font-bold ${scoreColors.text} shrink-0`}>
+                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${scoreColors.badgeBg} text-sm font-bold ${scoreColors.text} shrink-0 shadow-sm`}>
                         {entry.score}
                       </span>
-                      
+
                       {/* --- 动态变色的 Objective 标签 --- */}
                       <Badge
-                        className={`h-7 px-2 rounded-full border font-normal text-xs flex items-center gap-1 min-w-0 truncate max-w-[200px] sm:max-w-none shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}
+                        className={`h-8 px-3 rounded-full border font-normal text-xs flex items-center gap-1.5 min-w-0 truncate max-w-[200px] sm:max-w-none shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}
                       >
                         <Target className={`h-3.5 w-3.5 flex-shrink-0 ${theme.icon}`} />
-                        <span className="ml-1 truncate font-semibold">
+                        <span className="ml-1 truncate font-medium">
                           {displayTitle}
                         </span>
                       </Badge>
                     </div>
-                    
+
                     {/* 日期和删除按钮部分保持不变 */}
-                    <div className="ml-auto flex items-center gap-2 text-xs text-gray-400 shrink-0">
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
+                    <div className="ml-auto flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                      <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-md">
+                        <CalendarDays className="h-3.5 w-3.5" />
                         {formatDate(entry.created_at) || formatDate(entry.date)}
                       </span>
                       <button
                         onClick={() => onItemToDeleteChange(entry.id)}
-                        className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)}`}
+                        className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)} p-1.5 rounded-md hover:bg-white/50`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
+                  <p className="text-sm leading-relaxed text-foreground/90 mb-2">{entry.content}</p>
                   
                   {/* AI 分析部分保持不变 */}
                   {(entry.category || entry.reason) && (
@@ -575,18 +581,18 @@ export function DashboardView({
 
       {/* Delete confirmation Dialog */}
       <Dialog open={itemToDelete !== null} onOpenChange={(open) => !open && onItemToDeleteChange(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>确认删除这条日志？</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-md rounded-2xl border-border/60">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-lg font-semibold">确认删除</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               此操作无法撤销。这条记录将从云端数据库中永久删除。
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <DialogClose asChild>
-              <Button variant="outline">取消</Button>
+              <Button variant="outline" className="rounded-lg">取消</Button>
             </DialogClose>
-            <Button variant="destructive" onClick={onDelete} disabled={deletingId !== null}>
+            <Button variant="destructive" onClick={onDelete} disabled={deletingId !== null} className="rounded-lg">
               {deletingId !== null ? "正在删除..." : "确认删除"}
             </Button>
           </DialogFooter>

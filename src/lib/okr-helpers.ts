@@ -10,15 +10,15 @@ export function formatDate(dateStr?: string) {
 
 export function getScoreColor(score: number) {
   if (score <= 2) {
-    return { bg: "bg-red-50", text: "text-red-600", border: "border-red-200", badgeBg: "bg-red-100" }
+    return { bg: "bg-red-50/70", text: "text-red-600", border: "border-red-200/60", badgeBg: "bg-red-100" }
   }
   if (score <= 5) {
-    return { bg: "bg-muted/50", text: "text-muted-foreground", border: "border-border", badgeBg: "bg-muted" }
+    return { bg: "bg-muted/40", text: "text-muted-foreground", border: "border-border/60", badgeBg: "bg-muted" }
   }
   if (score <= 7) {
-    return { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200", badgeBg: "bg-blue-100" }
+    return { bg: "bg-blue-50/70", text: "text-blue-600", border: "border-blue-200/60", badgeBg: "bg-blue-100" }
   }
-  return { bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-200", badgeBg: "bg-amber-100" }
+  return { bg: "bg-emerald-50/70", text: "text-emerald-600", border: "border-emerald-200/60", badgeBg: "bg-emerald-100" }
 }
 
 export function getFutureQuarters(count: number = 4): string[] {

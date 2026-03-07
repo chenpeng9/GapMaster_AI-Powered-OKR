@@ -207,23 +207,53 @@ export default function GapYearPilotDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <header className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Target className="h-5 w-5 text-primary" />
+    <main className="min-h-screen bg-background relative">
+      {/* 精致的背景装饰 */}
+      <div className="fixed inset-0 gradient-subtle pointer-events-none" />
+      <div className="fixed inset-0 gradient-radial pointer-events-none" />
+
+      <div className="mx-auto max-w-3xl px-4 py-12 relative">
+        <header className="mb-10 flex items-center justify-between animate-fade-in-up">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shadow-glow">
+              <Target className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">GapMaster</h1>
-            <Badge variant="secondary" className="font-mono text-xs tracking-wide">MVP</Badge>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">GapMaster</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">AI-Powered OKR Management</p>
+            </div>
           </div>
+          <Badge variant="secondary" className="font-mono text-xs tracking-wide bg-secondary/80 backdrop-blur-sm">
+            v1.0
+          </Badge>
         </header>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="mb-8">
-            <TabsTrigger value="dashboard" className="font-semibold text-base">Dashboard</TabsTrigger>
-            <TabsTrigger value="okr" className="font-semibold text-base">OKR Strategy</TabsTrigger>
-            <TabsTrigger value="analytics" className="font-semibold text-base">Analytics</TabsTrigger>
+          <TabsList className="mb-8 grid grid-cols-3 gap-2 p-1.5 bg-muted/50 rounded-xl">
+            <TabsTrigger value="dashboard" className="tab-elegant data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Dashboard
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="okr" className="tab-elegant data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                OKR
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="tab-elegant data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Analytics
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">

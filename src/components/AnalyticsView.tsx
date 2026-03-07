@@ -62,42 +62,53 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
   }, [feed])
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-8 pb-12">
+      {/* 页面标题 */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          数据分析
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">追踪你的 OKR 执行进度</p>
+      </div>
+
       {/* 核心指标卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-primary mb-1">
+        <Card className="bg-primary/5 border-none shadow-sm hover:shadow-md transition-shadow rounded-xl">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-primary mb-2">
               <Zap className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">平均执行分</span>
+              <span className="text-xs font-medium uppercase tracking-wide">平均执行分</span>
             </div>
-            <div className="text-2xl font-bold">{stats.avgScore}</div>
+            <div className="text-3xl font-bold">{stats.avgScore}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50/50 border-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-green-600 mb-1">
+        <Card className="bg-emerald-50/50 border-none shadow-sm hover:shadow-md transition-shadow rounded-xl">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-emerald-600 mb-2">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">实质达成率</span>
+              <span className="text-xs font-medium uppercase tracking-wide">实质达成率</span>
             </div>
-            <div className="text-2xl font-bold">{stats.executionRate}%</div>
+            <div className="text-3xl font-bold">{stats.executionRate}%</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50/50 border-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-blue-600 mb-1">
+        <Card className="bg-blue-50/50 border-none shadow-sm hover:shadow-md transition-shadow rounded-xl">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-blue-600 mb-2">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase">本周动态数</span>
+              <span className="text-xs font-medium uppercase tracking-wide">本周动态数</span>
             </div>
-            <div className="text-2xl font-bold">{stats.totalLogs}</div>
+            <div className="text-3xl font-bold">{stats.totalLogs}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-amber-50/50 border-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-amber-600 mb-1">
+        <Card className="bg-violet-50/50 border-none shadow-sm hover:shadow-md transition-shadow rounded-xl">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-violet-600 mb-2">
               <Calendar className="h-4 w-4" />
               <span className="text-xs font-medium uppercase">活跃天数</span>
             </div>
@@ -157,29 +168,37 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
       </Card>
 
       {/* 战略重心分析 */}
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="overflow-hidden rounded-xl">
+        <CardHeader className="pb-4 border-b bg-muted/20">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Target className="h-4 w-4 text-muted-foreground" />
-            Strategic Focus (by Objective)
+            <Target className="h-4 w-4 text-primary" />
+            战略重心分布
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4 pt-2">
+        <CardContent className="pt-6">
+          <div className="space-y-5">
             {Object.entries(stats.objDistribution).length > 0 ? (
               Object.entries(stats.objDistribution)
                 .sort(([, a], [, b]) => b - a)
                 .map(([title, count], i) => {
                   const percentage = Math.round((count / stats.totalLogs) * 100)
+                  const colors = [
+                    "bg-primary",
+                    "bg-emerald-500",
+                    "bg-blue-500",
+                    "bg-violet-500",
+                    "bg-amber-500"
+                  ]
+                  const barColor = colors[i % colors.length]
                   return (
-                    <div key={i} className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
+                    <div key={i} className="space-y-2">
+                      <div className="flex justify-between text-sm">
                         <span className="font-medium truncate max-w-[80%]">{title}</span>
-                        <span className="text-muted-foreground">{count}次 ({percentage}%)</span>
+                        <span className="text-muted-foreground text-xs">{count}次 ({percentage}%)</span>
                       </div>
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all" 
+                      <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${barColor} transition-all duration-500 rounded-full`}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -196,10 +215,10 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
       </Card>
 
       {/* 底部 ENTJ 决策洞察 */}
-      <div className="rounded-xl border border-dashed border-primary/30 p-4 bg-primary/5">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
-          <Zap className="h-3 w-3" />
-          Executive Insight
+      <div className="rounded-xl border border-primary/20 p-5 bg-gradient-to-r from-primary/5 to-violet-5">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+          <Zap className="h-3.5 w-3.5" />
+          执行洞察
         </h3>
         <p className="text-sm text-foreground/80 leading-relaxed">
           {stats.executionRate >= 70 
