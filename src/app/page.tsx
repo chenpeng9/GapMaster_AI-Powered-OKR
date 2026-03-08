@@ -68,6 +68,13 @@ export default function GapYearPilotDashboard() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
+  // --- MiniMax API Key 状态 ---
+  const [minimaxApiKey, setMinimaxApiKey] = useState("")
+  const [minimaxBaseUrl, setMinimaxBaseUrl] = useState("https://api.minimax.chat")
+  const [minimaxApiKeyLoading, setMinimaxApiKeyLoading] = useState(false)
+  const [minimaxApiKeySuccess, setMinimaxApiKeySuccess] = useState(false)
+  const [minimaxApiKeyError, setMinimaxApiKeyError] = useState("")
+
   // --- 数据初始化 ---
   useEffect(() => {
     fetchFeed(true);
@@ -142,6 +149,66 @@ export default function GapYearPilotDashboard() {
     } finally {
       setOkrLoading(false)
     }
+  }
+
+  // --- 同步公众号状态 ---
+  const [wechatDialogOpen, setWechatDialogOpen] = useState(false)
+  const [wechatContent, setWechatContent] = useState<{
+    title: string
+    content: string
+    coverPrompt: string
+  } | null>(null)
+  const [wechatLoading, setWechatLoading] = useState(false)
+  const [wechatError, setWechatError] = useState("")
+  const [selectedLogForWechat, setSelectedLogForWechat] = useState<any>(null)
+
+  // --- 同步公众号函数 ---
+  async function handleSyncToWechat(log: any) {
+    setSelectedLogForWechat(log)
+    setWechatDialogOpen(true)
+    setWechatContent(null)
+    setWechatError("")
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setWechatError("请先登录")
+      return
+    }
+
+    setWechatLoading(true)
+    try {
+      const resp = await fetch("/api/wechat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          logContent: log.content,
+          logDate: log.created_at ? new Date(log.created_at).toLocaleDateString("zh-CN") : null
+        }),
+      })
+
+      const data = await resp.json()
+      console.log("WeChat API response:", resp.status, data)
+
+      if (!resp.ok) {
+        throw new Error(data.message || data.error || `请求失败 (${resp.status})`)
+      }
+
+      setWechatContent(data)
+    } catch (err: any) {
+      console.error("WeChat sync error:", err)
+      setWechatError(err.message || "生成失败，请重试")
+    } finally {
+      setWechatLoading(false)
+    }
+  }
+
+  async function copyWechatContent() {
+    if (!wechatContent) return
+    const text = `# ${wechatContent.title}\n\n${wechatContent.content}\n\n---\n\n封面提示词：\n${wechatContent.coverPrompt}`
+    await navigator.clipboard.writeText(text)
   }
 
   // --- 核心逻辑：AI 审计与提交 ---
@@ -305,6 +372,72 @@ export default function GapYearPilotDashboard() {
     }
   }
 
+  // --- MiniMax API Key 函数 ---
+  async function fetchMinimaxApiKey() {
+    if (!user) return
+    const { data } = await supabase
+      .from("user_settings")
+      .select("minimax_api_key, minimax_base_url")
+      .eq("user_id", user.id)
+      .single()
+    if (data?.minimax_api_key) {
+      setMinimaxApiKey(data.minimax_api_key)
+    }
+    if (data?.minimax_base_url) {
+      setMinimaxBaseUrl(data.minimax_base_url)
+    }
+  }
+
+  async function handleSaveMinimaxApiKey() {
+    if (!user) {
+      setMinimaxApiKeyError("用户未登录，请刷新页面")
+      return
+    }
+    setMinimaxApiKeyError("")
+    setMinimaxApiKeyLoading(true)
+
+    console.log("Saving MiniMax API Key for user:", user.id)
+
+    try {
+      // 先尝试更新
+      const { error: updateError } = await supabase
+        .from("user_settings")
+        .update({
+          minimax_api_key: minimaxApiKey,
+          minimax_base_url: minimaxBaseUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id)
+
+      console.log("Update result:", updateError)
+
+      // 如果没有记录需要更新，则插入
+      if (updateError) {
+        const { error: insertError } = await supabase
+          .from("user_settings")
+          .insert({
+            user_id: user.id,
+            minimax_api_key: minimaxApiKey,
+            minimax_base_url: minimaxBaseUrl
+          })
+
+        console.log("Insert result:", insertError)
+
+        if (insertError) {
+          throw insertError
+        }
+      }
+
+      setMinimaxApiKeySuccess(true)
+      setTimeout(() => setMinimaxApiKeySuccess(false), 2000)
+    } catch (err: any) {
+      console.error("Save error:", err)
+      setMinimaxApiKeyError(err.message || "保存失败，请重试")
+    } finally {
+      setMinimaxApiKeyLoading(false)
+    }
+  }
+
   function openEditObjective(obj: any) {
     setEditData({ id: obj.id, type: "O", title: obj.title || "" });
     setEditDialogOpen(true);
@@ -368,59 +501,116 @@ export default function GapYearPilotDashboard() {
             {/* 设置按钮 - 修改密码 */}
             <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={fetchMinimaxApiKey}
+                >
                   <Settings className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>修改密码</DialogTitle>
+                  <DialogTitle>个人设置</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  {passwordError && (
-                    <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg">
-                      {passwordError}
+                <div className="space-y-6 pt-4">
+                  {/* MiniMax API 配置 */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">MiniMax API Key</label>
+                      <p className="text-xs text-muted-foreground">
+                        用于公众号内容同步功能
+                      </p>
+                      <Input
+                        type="password"
+                        value={minimaxApiKey}
+                        onChange={(e) => setMinimaxApiKey(e.target.value)}
+                        placeholder="输入你的 MiniMax API Key"
+                        className="mt-1"
+                      />
                     </div>
-                  )}
-                  {passwordSuccess && (
-                    <div className="p-3 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-lg">
-                      密码修改成功！
+                    <div>
+                      <label className="text-sm font-medium">MiniMax API 地址</label>
+                      <p className="text-xs text-muted-foreground">
+                        使用中转服务时填写，如留空则使用官方地址
+                      </p>
+                      <Input
+                        value={minimaxBaseUrl}
+                        onChange={(e) => setMinimaxBaseUrl(e.target.value)}
+                        placeholder="https://api.minimax.chat"
+                        className="mt-1"
+                      />
                     </div>
-                  )}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">当前密码</label>
-                    <Input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="输入当前密码"
-                    />
+                    {minimaxApiKeyError && (
+                      <div className="p-2 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg">
+                        {minimaxApiKeyError}
+                      </div>
+                    )}
+                    {minimaxApiKeySuccess && (
+                      <div className="p-2 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-lg">
+                        保存成功！
+                      </div>
+                    )}
+                    <Button
+                      className="w-full"
+                      onClick={handleSaveMinimaxApiKey}
+                      disabled={minimaxApiKeyLoading || !minimaxApiKey}
+                    >
+                      {minimaxApiKeyLoading ? "保存中..." : "保存 API 配置"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">新密码</label>
-                    <Input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="至少 6 位"
-                    />
+
+                  <hr className="border-muted" />
+
+                  {/* 修改密码 */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">修改密码</h3>
+                    {passwordError && (
+                      <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg mb-3">
+                        {passwordError}
+                      </div>
+                    )}
+                    {passwordSuccess && (
+                      <div className="p-3 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-lg mb-3">
+                        密码修改成功！
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">当前密码</label>
+                      <Input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="输入当前密码"
+                      />
+                    </div>
+                    <div className="space-y-2 mt-2">
+                      <label className="text-sm font-medium">新密码</label>
+                      <Input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="至少 6 位"
+                      />
+                    </div>
+                    <div className="space-y-2 mt-2">
+                      <label className="text-sm font-medium">确认新密码</label>
+                      <Input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="再次输入新密码"
+                      />
+                    </div>
+                    <Button
+                      className="w-full mt-3"
+                      onClick={handleChangePassword}
+                      disabled={passwordLoading}
+                    >
+                      {passwordLoading ? "修改中..." : "确认修改"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">确认新密码</label>
-                    <Input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="再次输入新密码"
-                    />
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={handleChangePassword}
-                    disabled={passwordLoading}
-                  >
-                    {passwordLoading ? "修改中..." : "确认修改"}
-                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -487,6 +677,7 @@ export default function GapYearPilotDashboard() {
               onLoadMore={loadMore}
               feedFilter={feedFilter}
               onFilterChange={handleFilterChange}
+              onSyncToWechat={handleSyncToWechat}
             />
           </TabsContent>
 
@@ -531,6 +722,49 @@ export default function GapYearPilotDashboard() {
             <AnalyticsView feed={feed} objectives={objectives} />
           </TabsContent>
         </Tabs>
+
+        {/* 同步公众号 Dialog */}
+        <Dialog open={wechatDialogOpen} onOpenChange={setWechatDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>同步到公众号</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              {wechatLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-3 text-muted-foreground">AI 生成中...</span>
+                </div>
+              )}
+
+              {wechatError && (
+                <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg">
+                  {wechatError}
+                </div>
+              )}
+
+              {wechatContent && !wechatLoading && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">标题</label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg">{wechatContent.title}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">正文</label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg whitespace-pre-wrap text-sm">{wechatContent.content}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">封面提示词</label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-lg text-sm font-mono">{wechatContent.coverPrompt}</div>
+                  </div>
+                  <Button className="w-full" onClick={copyWechatContent}>
+                    一键复制全部内容
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   )

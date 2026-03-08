@@ -16,6 +16,7 @@ import {
   Target,
   Mic,
   MicOff,
+  ChevronRight,
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -80,6 +81,8 @@ export interface DashboardViewProps {
   // 过滤相关 props
   feedFilter?: { type: "O" | "KR" | null; id: number | null }
   onFilterChange?: (filter: { type: "O" | "KR" | null; id: number | null }) => void
+  // 同步公众号
+  onSyncToWechat?: (log: any) => void
 }
 
 export function DashboardView({
@@ -100,6 +103,7 @@ export function DashboardView({
   onLoadMore,
   feedFilter,
   onFilterChange,
+  onSyncToWechat,
 }: DashboardViewProps) {
   // 使用父组件传入的过滤条件，如果没有则使用本地状态
   const [localOkrFilter, setLocalOkrFilter] = useState<OkrFilterType>({ type: null, id: null })
@@ -119,6 +123,7 @@ export function DashboardView({
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
   const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(false)
+  const [showScoringLegend, setShowScoringLegend] = useState(false) // 评分说明默认折叠
   const isManuallyStoppedRef = useRef(false)
 
   useEffect(() => {
@@ -474,11 +479,16 @@ export function DashboardView({
         </div>
       </section>
 
-      {/* Execution Scoring Legend */}
+      {/* Execution Scoring Legend - Collapsible */}
       <section className="mb-10">
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <button
+          onClick={() => setShowScoringLegend(!showScoringLegend)}
+          className="flex items-center gap-2 mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight className={`h-4 w-4 transition-transform ${showScoringLegend ? 'rotate-90' : ''}`} />
           评分说明
-        </h2>
+        </button>
+        {showScoringLegend && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1 bg-red-50/60 border border-red-100/60 rounded-lg px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
@@ -517,6 +527,7 @@ export function DashboardView({
             </div>
           </div>
         </div>
+        )}
       </section>
 
       {/* Recent Feed */}
@@ -585,6 +596,18 @@ export function DashboardView({
                         <CalendarDays className="h-3.5 w-3.5" />
                         {formatDate(entry.created_at) || formatDate(entry.date)}
                       </span>
+                      {onSyncToWechat && (
+                        <button
+                          onClick={() => onSyncToWechat(entry)}
+                          className={`${actionBtnBaseClass} p-1.5 rounded-md hover:bg-white/50`}
+                          title="同步到公众号"
+                        >
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                        </button>
+                      )}
                       <button
                         onClick={() => onItemToDeleteChange(entry.id)}
                         className={`${actionBtnBaseClass} ${deleteBtnStates(deletingId === entry.id)} p-1.5 rounded-md hover:bg-white/50`}
