@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { createClient } from "@supabase/supabase-js";
@@ -9,11 +9,14 @@ if (process.env.NODE_ENV === "development") {
   const proxyAgent = new ProxyAgent("http://127.0.0.1:7890");
   setGlobalDispatcher(proxyAgent);
 } else {
-  console.log("Detected production environment, connecting directly to Gemini...");
+  console.log("Detected production environment, connecting directly to DeepSeek...");
 }
 
-// 2. 初始化 Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// 2. 初始化 DeepSeek (兼容 OpenAI API)
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY!,
+  baseURL: "https://api.deepseek.com"
+});
 
 // 3. 创建服务器端 Supabase 客户端
 function getSupabaseServerClient() {
@@ -107,10 +110,17 @@ ${okrContextString ? okrContextString : '（当前无活跃目标，仅进行评
 """${content}"""
 `;
 
-    // 5. 调用 Gemini 模型
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    // 5. 调用 DeepSeek 模型
+    const completion = await deepseek.chat.completions.create({
+      model: "deepseek-chat",
+      messages: [
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+
+    const responseText = completion.choices[0]?.message?.content || "";
 
     // 6. 健壮的 JSON 提取逻辑
     let cleanJson = responseText;

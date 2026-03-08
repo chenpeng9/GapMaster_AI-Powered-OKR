@@ -21,7 +21,7 @@ npm run lint     # Run ESLint
 - **Next.js 16** with App Router
 - **React 19** for UI
 - **Supabase** for database (PostgreSQL)
-- **Google Gemini** (gemini-2.5-flash) for AI scoring
+- **DeepSeek** (deepseek-chat) for AI scoring
 - **Tailwind CSS 4** + **shadcn/ui** for styling
 - **Recharts** for data visualization
 
@@ -37,6 +37,6 @@ npm run lint     # Run ESLint
 Uses Supabase with tables for objectives, key_results, and daily_logs. Client is configured in `src/lib/supabase.ts`.
 
 ### Environment Variables
-- `GEMINI_API_KEY` - Google Gemini API key
+- `DEEPSEEK_API_KEY` - DeepSeek API key
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
