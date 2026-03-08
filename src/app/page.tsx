@@ -70,16 +70,19 @@ export default function GapYearPilotDashboard() {
 
   // --- 数据初始化 ---
   useEffect(() => {
-    fetchFeed();
+    fetchFeed(true);
     fetchObjectivesFull();
   }, [])
 
-  async function fetchFeed(resetPage = false) {
-    const currentPage = resetPage ? 1 : page
+  async function fetchFeed(isInitialLoad = false) {
+    const currentPage = isInitialLoad ? 1 : page
     const from = (currentPage - 1) * 10
     const to = from + 9
 
-    setLoadingFeed(true)
+    // 只在初始加载时设置 loadingFeed，加载更多时不设置
+    if (isInitialLoad) {
+      setLoadingFeed(true)
+    }
 
     let query = supabase
       .from("logs")
@@ -101,15 +104,15 @@ export default function GapYearPilotDashboard() {
 
     const { data } = await query
 
-    if (resetPage) {
+    if (isInitialLoad) {
       setFeed(data || [])
       setPage(2)
+      setLoadingFeed(false)
     } else {
       setFeed(prev => [...prev, ...(data || [])])
       setPage(prev => prev + 1)
     }
     setHasMore(data?.length === 10)
-    setLoadingFeed(false)
   }
 
   async function loadMore() {
