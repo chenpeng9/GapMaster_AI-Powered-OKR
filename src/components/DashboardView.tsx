@@ -73,6 +73,13 @@ export interface DashboardViewProps {
   onItemToDeleteChange: (id: number | null) => void
   deletingId: number | null
   onDelete: () => void
+  // 分页相关 props
+  hasMore?: boolean
+  loadingMore?: boolean
+  onLoadMore?: () => void
+  // 过滤相关 props
+  feedFilter?: { type: "O" | "KR" | null; id: number | null }
+  onFilterChange?: (filter: { type: "O" | "KR" | null; id: number | null }) => void
 }
 
 export function DashboardView({
@@ -88,8 +95,25 @@ export function DashboardView({
   onItemToDeleteChange,
   deletingId,
   onDelete,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
+  feedFilter,
+  onFilterChange,
 }: DashboardViewProps) {
-  const [okrFilter, setOkrFilter] = useState<OkrFilterType>({ type: null, id: null })
+  // 使用父组件传入的过滤条件，如果没有则使用本地状态
+  const [localOkrFilter, setLocalOkrFilter] = useState<OkrFilterType>({ type: null, id: null })
+
+  // 优先使用父组件传入的过滤条件
+  const okrFilter = feedFilter !== undefined ? feedFilter : localOkrFilter
+
+  const setOkrFilter = (filter: OkrFilterType) => {
+    if (onFilterChange) {
+      onFilterChange(filter)
+    } else {
+      setLocalOkrFilter(filter)
+    }
+  }
 
   // --- 语音识别状态与逻辑 ---
   const [isListening, setIsListening] = useState(false)
@@ -194,19 +218,27 @@ export function DashboardView({
   }
   // --- 语音逻辑结束 ---
 
+  // 当父组件传入 feedFilter 时，数据已经过后端过滤，不需要再本地过滤
+  // 只有当没有传入 feedFilter 时，才使用本地过滤
+  const showLocalFilter = feedFilter === undefined
+  const activeFilter = feedFilter !== undefined ? feedFilter : localOkrFilter
+
   const filteredFeed = useMemo(() => {
-    if (!okrFilter.type || !okrFilter.id) return feed
-    if (okrFilter.type === "KR") {
-      return feed.filter((entry) => entry.kr_id === okrFilter.id)
+    // 如果父组件已经过滤了数据，直接返回
+    if (!showLocalFilter) return feed
+
+    if (!activeFilter.type || !activeFilter.id) return feed
+    if (activeFilter.type === "KR") {
+      return feed.filter((entry) => entry.kr_id === activeFilter.id)
     }
-    if (okrFilter.type === "O") {
-      const obj = objectives?.find((o) => o.id === okrFilter.id)
+    if (activeFilter.type === "O") {
+      const obj = objectives?.find((o) => o.id === activeFilter.id)
       if (!obj || !Array.isArray(obj.key_results)) return []
       const krIds = obj.key_results.map((kr: any) => kr.id)
       return feed.filter((entry) => krIds.includes(entry.kr_id))
     }
     return feed
-  }, [okrFilter, feed, objectives])
+  }, [feed, activeFilter, objectives, showLocalFilter])
 
   return (
     <>
@@ -216,7 +248,7 @@ export function DashboardView({
           <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             OKR Progress
           </h2>
-          {okrFilter.type && (
+          {activeFilter.type && (
             <Button
               size="sm"
               variant="outline"
@@ -256,7 +288,7 @@ export function DashboardView({
               ]
               const colorIdx = idx % colors.length
               const themeColor = colors[colorIdx]
-              const isObjectiveSelected = okrFilter.type === "O" && okrFilter.id === obj.id
+              const isObjectiveSelected = activeFilter.type === "O" && activeFilter.id === obj.id
 
               const krs = Array.isArray(obj.key_results) ? obj.key_results : []
               const totalTarget = krs.reduce((sum: number, kr: any) => sum + (kr.target_value || 0), 0)
@@ -335,7 +367,7 @@ export function DashboardView({
                             kr.target_value > 0
                               ? Math.min((kr.current_value || 0) / kr.target_value, 1)
                               : 0
-                          const isKRSelected = okrFilter.type === "KR" && okrFilter.id === kr.id
+                          const isKRSelected = activeFilter.type === "KR" && activeFilter.id === kr.id
                           return (
                             <div
                               key={kr.id}
@@ -575,6 +607,27 @@ export function DashboardView({
                 </div>
               );
             })
+          )}
+
+          {/* 加载更多按钮 */}
+          {hasMore && onLoadMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={onLoadMore}
+                disabled={loadingMore}
+                className="w-full max-w-xs"
+              >
+                {loadingMore ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    加载中...
+                  </>
+                ) : (
+                  "加载更多"
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </section>

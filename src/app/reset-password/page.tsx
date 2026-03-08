@@ -50,13 +50,22 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      // 从 URL 获取 access_token
+      // 从 URL hash 获取 access_token 和 refresh_token
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
       const accessToken = hashParams.get("access_token")
+      const refreshToken = hashParams.get("refresh_token")
 
-      if (!accessToken) {
-        throw new Error("Invalid reset link")
+      if (!accessToken || !refreshToken) {
+        throw new Error("无效的重置链接，请重新请求密码重置")
       }
+
+      // 先设置 session，然后用 updateUser 更新密码
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      })
+
+      if (sessionError) throw sessionError
 
       const { error } = await supabase.auth.updateUser({
         password,

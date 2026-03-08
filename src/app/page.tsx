@@ -33,6 +33,12 @@ export default function GapYearPilotDashboard() {
   const [judging, setJudging] = useState(false)
   const [loadingFeed, setLoadingFeed] = useState(true)
   const [objectives, setObjectives] = useState<any[]>([])
+
+  // --- 分页状态 ---
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [feedFilter, setFeedFilter] = useState<{ type: "O" | "KR" | null; id: number | null }>({ type: null, id: null })
   
   // --- OKR 管理状态 ---
   const [okrLoading, setOkrLoading] = useState(false)
@@ -68,11 +74,55 @@ export default function GapYearPilotDashboard() {
     fetchObjectivesFull();
   }, [])
 
-  async function fetchFeed() {
+  async function fetchFeed(resetPage = false) {
+    const currentPage = resetPage ? 1 : page
+    const from = (currentPage - 1) * 10
+    const to = from + 9
+
     setLoadingFeed(true)
-    const { data } = await supabase.from("logs").select("*").order("created_at", { ascending: false })
-    if (data) setFeed(data)
+
+    let query = supabase
+      .from("logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, to)
+
+    // 如果有过滤条件，添加过滤
+    if (feedFilter.type === "KR" && feedFilter.id) {
+      query = query.eq("kr_id", feedFilter.id)
+    } else if (feedFilter.type === "O" && feedFilter.id) {
+      // 获取该 Objective 下的所有 KR ID
+      const obj = objectives.find(o => o.id === feedFilter.id)
+      if (obj && Array.isArray(obj.key_results)) {
+        const krIds = obj.key_results.map((kr: any) => kr.id)
+        query = query.in("kr_id", krIds)
+      }
+    }
+
+    const { data } = await query
+
+    if (resetPage) {
+      setFeed(data || [])
+      setPage(2)
+    } else {
+      setFeed(prev => [...prev, ...(data || [])])
+      setPage(prev => prev + 1)
+    }
+    setHasMore(data?.length === 10)
     setLoadingFeed(false)
+  }
+
+  async function loadMore() {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    await fetchFeed(false)
+    setLoadingMore(false)
+  }
+
+  // 过滤变化时重置并重新查询
+  function handleFilterChange(filter: { type: "O" | "KR" | null; id: number | null }) {
+    setFeedFilter(filter)
+    fetchFeed(true)
   }
 
   async function fetchObjectivesFull() {
@@ -429,6 +479,11 @@ export default function GapYearPilotDashboard() {
               onItemToDeleteChange={setItemToDelete}
               deletingId={deletingId}
               onDelete={handleDelete}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={loadMore}
+              feedFilter={feedFilter}
+              onFilterChange={handleFilterChange}
             />
           </TabsContent>
 
