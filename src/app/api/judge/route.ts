@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
+import { createClient } from "@supabase/supabase-js";
 
 // 1. 环境检查：本地开发走 Clash 代理，线上环境直连
 if (process.env.NODE_ENV === "development") {
@@ -14,7 +15,45 @@ if (process.env.NODE_ENV === "development") {
 // 2. 初始化 Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+// 3. 创建服务器端 Supabase 客户端
+function getSupabaseServerClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+// 4. 验证用户认证
+async function verifyAuth(request: Request) {
+  const supabase = getSupabaseServerClient();
+
+  // 从请求头获取 token
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader) {
+    return { error: "Missing authorization header", user: null };
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return { error: error?.message || "Invalid token", user: null };
+  }
+
+  return { error: null, user };
+}
+
 export async function POST(req: Request) {
+  // 验证用户身份
+  const { error: authError, user } = await verifyAuth(req);
+
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: "Unauthorized", message: authError || "Please login first" },
+      { status: 401 }
+    );
+  }
+
   try {
     const { content, objectives } = await req.json();
 

@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local scripts (contain sensitive data)
+/scripts/
+
+# playwright
+.playwright-mcp/
+!/scripts/*.sql

@@ -1,10 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Target } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Target, LogOut, Settings } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 import { DashboardView } from "@/components/DashboardView"
 import { OKRStrategyView } from "@/components/OKRStrategyView"
 import { AnalyticsView } from "@/components/AnalyticsView"
@@ -12,6 +17,16 @@ import { AnalyticsView } from "@/components/AnalyticsView"
 type OkrDeleteType = { type: "objective" | "kr"; id: number }
 
 export default function GapYearPilotDashboard() {
+  const { user, loading: authLoading, signOut } = useAuth()
+  const router = useRouter()
+
+  // --- 登录状态检查 ---
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, authLoading, router])
+
   // --- 基础状态 ---
   const [capture, setCapture] = useState("")
   const [feed, setFeed] = useState<any[]>([])
@@ -37,6 +52,15 @@ export default function GapYearPilotDashboard() {
   const [editSaving, setEditSaving] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  // --- 修改密码状态 ---
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   // --- 数据初始化 ---
   useEffect(() => {
@@ -70,11 +94,22 @@ export default function GapYearPilotDashboard() {
   // --- 核心逻辑：AI 审计与提交 ---
   async function handleSubmit() {
     if (!capture.trim() || judging) return
+
+    // 获取 session token
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push("/login")
+      return
+    }
+
     setJudging(true)
     try {
       const resp = await fetch("/api/judge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ content: capture.trim(), objectives }),
       })
       
@@ -160,10 +195,61 @@ export default function GapYearPilotDashboard() {
 
   async function handleDeleteKRConfirmed(id: number) {
     setOkrDeletingId(id)
-    try { 
-      await supabase.from("key_results").delete().eq("id", id); 
+    try {
+      await supabase.from("key_results").delete().eq("id", id);
       await fetchObjectivesFull();
     } finally { setOkrDeleteDialog(null); setOkrDeletingId(null); }
+  }
+
+  // --- 修改密码函数 ---
+  async function handleChangePassword() {
+    setPasswordError("")
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("两次输入的密码不一致")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("密码长度至少为 6 位")
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      // 验证当前密码
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: currentPassword,
+      })
+
+      if (signInError) {
+        setPasswordError("当前密码不正确")
+        setPasswordLoading(false)
+        return
+      }
+
+      // 更新密码
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+
+      if (updateError) throw updateError
+
+      setPasswordSuccess(true)
+      setTimeout(() => {
+        setPasswordDialogOpen(false)
+        setPasswordSuccess(false)
+        setCurrentPassword("")
+        setNewPassword("")
+        setConfirmPassword("")
+      }, 2000)
+    } catch (err: any) {
+      setPasswordError(err.message || "修改失败，请重试")
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   function openEditObjective(obj: any) {
@@ -223,9 +309,82 @@ export default function GapYearPilotDashboard() {
               <p className="text-xs text-muted-foreground mt-0.5">AI-Powered OKR Management</p>
             </div>
           </div>
-          <Badge variant="secondary" className="font-mono text-xs tracking-wide bg-secondary/80 backdrop-blur-sm">
-            v1.0
-          </Badge>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
+
+            {/* 设置按钮 - 修改密码 */}
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>修改密码</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  {passwordError && (
+                    <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg">
+                      {passwordError}
+                    </div>
+                  )}
+                  {passwordSuccess && (
+                    <div className="p-3 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-lg">
+                      密码修改成功！
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">当前密码</label>
+                    <Input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="输入当前密码"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">新密码</label>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="至少 6 位"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">确认新密码</label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="再次输入新密码"
+                    />
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={handleChangePassword}
+                    disabled={passwordLoading}
+                  >
+                    {passwordLoading ? "修改中..." : "确认修改"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* 退出登录按钮 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await signOut()
+                router.push("/login")
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
         <Tabs defaultValue="dashboard" className="w-full">
