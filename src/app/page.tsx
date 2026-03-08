@@ -255,9 +255,10 @@ export default function GapYearPilotDashboard() {
           content: capture.trim(),
           score: data.score,
           category: data.category,
-          reason: data.analysis, 
+          reason: data.analysis,
           topic: mappedObjectiveTitle,
           kr_id: primaryKrId,
+          user_id: user?.id,
         }])
         .select()
 
