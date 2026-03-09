@@ -2,9 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* ========== 简约精致设计系统 ========== */
+/* ========== 奢华精致设计系统 ========== */
 
-/* 自定义字体 - 使用优雅的字体组合 */
 @font-face {
   font-family: 'Geist';
   src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');
@@ -82,81 +81,86 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* ========== 浅色主题 - 温暖优雅 ========== */
+/* ========== 浅色主题 - 奢华金白 ========== */
 :root {
   --radius: 0.75rem;
 
-  /* 主色调 - 温暖的石炭黑 */
-  --background: #FAFAF9;
+  /* 主色调 - 象牙白 + 深黑 */
+  --background: #FEFCF9;
   --foreground: #1C1917;
 
-  /* 卡片和弹出层 - 微妙的暖白 */
-  --card: #FFFFFF;
+  /* 卡片和弹出层 - 奶白色 */
+  --card: #FFFCF7;
   --card-foreground: #1C1917;
-  --popover: #FFFFFF;
+  --popover: #FFFCF7;
   --popover-foreground: #1C1917;
 
-  /* 主色 - 优雅的深青色 */
-  --primary: #0D9488;
-  --primary-foreground: #FFFFFF;
+  /* 主色 - 奢华金 */
+  --primary: #B8860B;
+  --primary-foreground: #FFFCF7;
 
-  /* 次要色 - 温暖的灰色 */
-  --secondary: #F5F5F4;
-  --secondary-foreground: #44403C;
+  /* 次要色 - 暖米灰 */
+  --secondary: #F5F0E8;
+  --secondary-foreground: #57534E;
 
-  /* muted - 柔和的中性色 */
-  --muted: #F5F5F4;
-  --muted-foreground: #78716C;
+  /* muted - 淡米色 */
+  --muted: #F5F0E8;
+  --muted-foreground: #A8A29E;
 
   /* 强调色 */
-  --accent: #F5F5F4;
-  --accent-foreground: #1C1917;
+  --accent: #F5F0E8;
+  --accent-foreground: #B8860B;
 
-  /* 危险色 - 柔和的红色 */
-  --destructive: #DC2626;
-  --destructive-foreground: #FFFFFF;
+  /* 危险色 */
+  --destructive: #B91C1C;
+  --destructive-foreground: #FFFCF7;
 
-  /* 边框 - 微妙的暖灰 */
-  --border: #E7E5E4;
-  --input: #E7E5E4;
-  --ring: #0D9488;
+  /* 边框 - 香槟金灰 */
+  --border: #E7E0D6;
+  --input: #E7E0D6;
+  --ring: #B8860B;
 
-  /* 图表配色 - 精致协调 */
-  --chart-1: #0D9488;
-  --chart-2: #F59E0B;
-  --chart-3: #8B5CF6;
-  --chart-4: #EC4899;
-  --chart-5: #6366F1;
+  /* 图表配色 - 金色系 */
+  --chart-1: #B8860B;
+  --chart-2: #D4A574;
+  --chart-3: #8B7355;
+  --chart-4: #C4A77D;
+  --chart-5: #E5D4B8;
 
   /* 侧边栏 */
-  --sidebar: #FAFAF9;
+  --sidebar: #FEFCF9;
   --sidebar-foreground: #1C1917;
-  --sidebar-primary: #0D9488;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5F5F4;
-  --sidebar-accent-foreground: #44403C;
-  --sidebar-border: #E7E5E4;
-  --sidebar-ring: #0D9488;
+  --sidebar-primary: #B8860B;
+  --sidebar-primary-foreground: #FFFCF7;
+  --sidebar-accent: #F5F0E8;
+  --sidebar-accent-foreground: #57534E;
+  --sidebar-border: #E7E0D6;
+  --sidebar-ring: #B8860B;
 
-  /* 评分颜色 - 更精致 */
-  --score-high: #10B981;
-  --score-medium: #3B82F6;
-  --score-low: #F59E0B;
-  --score-none: #EF4444;
+  /* 评分颜色 */
+  --score-high: #15803D;
+  --score-medium: #1D4ED8;
+  --score-low: #B45309;
+  --score-none: #B91C1C;
+
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #B8860B 0%, #D4A574 50%, #E5D4B8 100%);
+  --gradient-secondary: linear-gradient(135deg, #1C1917 0%, #57534E 100%);
+  --gradient-bg: linear-gradient(180deg, #FEFCF9 0%, #F5F0E8 100%);
 }
 
-/* ========== 深色主题 - 深邃优雅 ========== */
+/* ========== 深色主题 - 深夜奢华 ========== */
 .dark {
   --background: #0C0A09;
-  --foreground: #FAFAF9;
+  --foreground: #F5F0E8;
 
   --card: #1C1917;
-  --card-foreground: #FAFAF9;
+  --card-foreground: #F5F0E8;
   --popover: #1C1917;
-  --popover-foreground: #FAFAF9;
+  --popover-foreground: #F5F0E8;
 
-  --primary: #14B8A6;
-  --primary-foreground: #0C0A09;
+  --primary: #D4A574;
+  --primary-foreground: #1C1917;
 
   --secondary: #292524;
   --secondary-foreground: #D6D3D1;
@@ -164,35 +168,93 @@
   --muted: #292524;
   --muted-foreground: #A8A29E;
 
-  --accent: #292524;
-  --accent-foreground: #FAFAF9;
+  --accent: #352F2A;
+  --accent-foreground: #D4A574;
 
-  --destructive: #EF4444;
-  --destructive-foreground: #FAFAF9;
+  --destructive: #F87171;
+  --destructive-foreground: #1C1917;
 
   --border: #292524;
   --input: #292524;
-  --ring: #14B8A6;
+  --ring: #D4A574;
 
-  --chart-1: #14B8A6;
-  --chart-2: #FBBF24;
-  --chart-3: #A78BFA;
-  --chart-4: #F472B6;
-  --chart-5: #818CF8;
+  --chart-1: #D4A574;
+  --chart-2: #C4A77D;
+  --chart-3: #8B7355;
+  --chart-4: #A68A64;
+  --chart-5: #B8956E;
 
   --sidebar: #0C0A09;
-  --sidebar-foreground: #FAFAF9;
-  --sidebar-primary: #14B8A6;
-  --sidebar-primary-foreground: #0C0A09;
+  --sidebar-foreground: #F5F0E8;
+  --sidebar-primary: #D4A574;
+  --sidebar-primary-foreground: #1C1917;
   --sidebar-accent: #1C1917;
   --sidebar-accent-foreground: #D6D3D1;
   --sidebar-border: #292524;
-  --sidebar-ring: #14B8A6;
+  --sidebar-ring: #D4A574;
 
-  --score-high: #34D399;
-  --score-medium: #60A5FA;
-  --score-low: #FBBF24;
-  --score-none: #F87171;
+  --score-high: #22C55E;
+  --score-medium: #3B82F6;
+  --score-low: #F59E0B;
+  --score-none: #EF4444;
+
+  --gradient-primary: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+  --gradient-secondary: linear-gradient(135deg, #F5F0E8 0%, #D4A574 100%);
+  --gradient-bg: linear-gradient(180deg, #0C0A09 0%, #1C1917 100%);
+}
+
+/* ========== 深色主题 - 深夜蓝黑 ========== */
+.dark {
+  --background: #030712;
+  --foreground: #F9FAFB;
+
+  --card: #111827;
+  --card-foreground: #F9FAFB;
+  --popover: #111827;
+  --popover-foreground: #F9FAFB;
+
+  --primary: #F9FAFB;
+  --primary-foreground: #030712;
+
+  --secondary: #1F2937;
+  --secondary-foreground: #D1D5DB;
+
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
+
+  --accent: #1F2937;
+  --accent-foreground: #F9FAFB;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #1F2937;
+  --input: #1F2937;
+  --ring: #F9FAFB;
+
+  --chart-1: #F9FAFB;
+  --chart-2: #D1D5DB;
+  --chart-3: #9CA3AF;
+  --chart-4: #6B7280;
+  --chart-5: #374151;
+
+  --sidebar: #030712;
+  --sidebar-foreground: #F9FAFB;
+  --sidebar-primary: #F9FAFB;
+  --sidebar-primary-foreground: #030712;
+  --sidebar-accent: #111827;
+  --sidebar-accent-foreground: #D1D5DB;
+  --sidebar-border: #1F2937;
+  --sidebar-ring: #F9FAFB;
+
+  --score-high: #22C55E;
+  --score-medium: #3B82F6;
+  --score-low: #EAB308;
+  --score-none: #EF4444;
+
+  --gradient-primary: linear-gradient(135deg, #F9FAFB 0%, #6B7280 100%);
+  --gradient-secondary: linear-gradient(135deg, #D1D5DB 0%, #F9FAFB 100%);
+  --gradient-bg: linear-gradient(180deg, #030712 0%, #111827 50%, #1E293B 100%);
 }
 
 /* ========== 基础样式 ========== */
@@ -213,7 +275,7 @@
 
   /* 选中文本的高亮 */
   ::selection {
-    background-color: rgba(13, 148, 136, 0.2);
+    background-color: rgba(184, 134, 11, 0.25);
     color: inherit;
   }
 }
@@ -297,35 +359,78 @@
 
 /* ========== 精致阴影 ========== */
 .shadow-elegant {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .shadow-card {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .shadow-glow {
-  box-shadow: 0 0 20px rgba(13, 148, 136, 0.15);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-glow-pink {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-gradient {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* ========== 玻璃态效果 ========== */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .dark .glass {
-  background: rgba(28, 25, 23, 0.7);
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ========== 渐变背景 ========== */
 .gradient-subtle {
-  background: linear-gradient(135deg, rgba(13, 148, 136, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%);
+  background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
 }
 
 .gradient-radial {
-  background: radial-gradient(ellipse at top, rgba(13, 148, 136, 0.05) 0%, transparent 50%);
+  background: radial-gradient(ellipse at top, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+}
+
+.gradient-mesh {
+  background:
+    radial-gradient(at 40% 20%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(244, 114, 182, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
 /* ========== 评分徽章样式 ========== */

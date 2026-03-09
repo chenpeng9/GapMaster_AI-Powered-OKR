@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DashboardView } from "@/components/DashboardView"
 import { OKRStrategyView } from "@/components/OKRStrategyView"
 import { AnalyticsView } from "@/components/AnalyticsView"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 type OkrDeleteType = { type: "objective" | "kr"; id: number }
 
@@ -77,11 +78,16 @@ export default function GapYearPilotDashboard() {
 
   // --- 数据初始化 ---
   useEffect(() => {
-    fetchFeed(true);
-    fetchObjectivesFull();
-  }, [])
+    if (user?.id) {
+      fetchFeed(true);
+      fetchObjectivesFull();
+    }
+  }, [user?.id])
 
   async function fetchFeed(isInitialLoad = false) {
+    // 确保用户已登录
+    if (!user?.id) return
+
     const currentPage = isInitialLoad ? 1 : page
     const from = (currentPage - 1) * 10
     const to = from + 9
@@ -94,6 +100,7 @@ export default function GapYearPilotDashboard() {
     let query = supabase
       .from("logs")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(from, to)
 
@@ -136,11 +143,15 @@ export default function GapYearPilotDashboard() {
   }
 
   async function fetchObjectivesFull() {
+    // 确保用户已登录
+    if (!user?.id) return
+
     setOkrLoading(true)
     try {
       const { data, error } = await supabase
         .from("objectives")
         .select(`*, key_results (*)`)
+        .eq("user_id", user.id)
         .order("id", { ascending: true }) // 升序排列，确保序号 1, 2, 3 稳定
       if (error) throw error
       setObjectives(data || [])
@@ -299,7 +310,7 @@ export default function GapYearPilotDashboard() {
     if (deletingId || itemToDelete == null) return
     setDeletingId(itemToDelete)
     try {
-      const { error } = await supabase.from("logs").delete().eq("id", itemToDelete)
+      const { error } = await supabase.from("logs").delete().eq("id", itemToDelete).eq("user_id", user?.id)
       if (!error) setFeed((prev) => prev.filter((entry) => entry.id !== itemToDelete))
     } finally {
       setDeletingId(null); setItemToDelete(null);
@@ -308,8 +319,8 @@ export default function GapYearPilotDashboard() {
 
   async function handleDeleteObjectiveConfirmed(id: number) {
     setOkrDeletingId(id)
-    try { 
-      await supabase.from("objectives").delete().eq("id", id); 
+    try {
+      await supabase.from("objectives").delete().eq("id", id).eq("user_id", user?.id);
       await fetchObjectivesFull();
     } finally { setOkrDeleteDialog(null); setOkrDeletingId(null); }
   }
@@ -317,7 +328,12 @@ export default function GapYearPilotDashboard() {
   async function handleDeleteKRConfirmed(id: number) {
     setOkrDeletingId(id)
     try {
-      await supabase.from("key_results").delete().eq("id", id);
+      // 先获取该KR的objective_id，确保属于当前用户
+      const { data: kr } = await supabase.from("key_results").select("objective_id").eq("id", id).maybeSingle()
+      if (kr) {
+        // 验证objective属于当前用户
+        await supabase.from("objectives").delete().eq("id", kr.objective_id).eq("user_id", user?.id);
+      }
       await fetchObjectivesFull();
     } finally { setOkrDeleteDialog(null); setOkrDeletingId(null); }
   }
@@ -465,7 +481,7 @@ export default function GapYearPilotDashboard() {
     if (e) e.preventDefault();
     setCreatingObjective(true);
     try {
-      await supabase.from("objectives").insert([{ title: newObjectiveTitle.trim(), quarter: newObjectiveQuarter.trim() }]);
+      await supabase.from("objectives").insert([{ title: newObjectiveTitle.trim(), quarter: newObjectiveQuarter.trim(), user_id: user?.id }]);
       setNewObjectiveTitle(""); setNewObjectiveQuarter(""); await fetchObjectivesFull();
     } finally { setCreatingObjective(false); }
   }
@@ -496,7 +512,8 @@ export default function GapYearPilotDashboard() {
               <p className="text-xs text-muted-foreground mt-0.5">AI-Powered OKR Management</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
 
             {/* 设置按钮 - 修改密码 */}
