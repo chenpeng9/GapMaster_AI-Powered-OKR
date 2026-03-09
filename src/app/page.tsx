@@ -13,7 +13,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DashboardView } from "@/components/DashboardView"
 import { OKRStrategyView } from "@/components/OKRStrategyView"
 import { AnalyticsView } from "@/components/AnalyticsView"
-import { ThemeToggle } from "@/components/theme-toggle"
 
 type OkrDeleteType = { type: "objective" | "kr"; id: number }
 
@@ -513,7 +512,6 @@ export default function GapYearPilotDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
 
             {/* 设置按钮 - 修改密码 */}
