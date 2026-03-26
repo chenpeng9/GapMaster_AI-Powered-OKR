@@ -1,0 +1,4 @@
+# Supabase Edge Functions 配置
+
+[functions.daily-reminder]
+verify_jwt = false

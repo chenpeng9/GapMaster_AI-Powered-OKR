@@ -75,6 +75,14 @@ export default function GapYearPilotDashboard() {
   const [minimaxApiKeySuccess, setMinimaxApiKeySuccess] = useState(false)
   const [minimaxApiKeyError, setMinimaxApiKeyError] = useState("")
 
+  // --- 定时提醒状态 ---
+  const [reminderEnabled, setReminderEnabled] = useState(false)
+  const [reminderWebhookUrl, setReminderWebhookUrl] = useState("")
+  const [reminderTime, setReminderTime] = useState("21:00")
+  const [reminderLoading, setReminderLoading] = useState(false)
+  const [reminderSuccess, setReminderSuccess] = useState(false)
+  const [reminderError, setReminderError] = useState("")
+
   // --- 数据初始化 ---
   useEffect(() => {
     if (user?.id) {
@@ -393,7 +401,7 @@ export default function GapYearPilotDashboard() {
     if (!user) return
     const { data } = await supabase
       .from("user_settings")
-      .select("minimax_api_key, minimax_base_url")
+      .select("minimax_api_key, minimax_base_url, reminder_enabled, reminder_webhook_url, reminder_time")
       .eq("user_id", user.id)
       .single()
     if (data?.minimax_api_key) {
@@ -402,6 +410,10 @@ export default function GapYearPilotDashboard() {
     if (data?.minimax_base_url) {
       setMinimaxBaseUrl(data.minimax_base_url)
     }
+    // 提醒设置
+    setReminderEnabled(data?.reminder_enabled || false)
+    setReminderWebhookUrl(data?.reminder_webhook_url || "")
+    setReminderTime(data?.reminder_time || "21:00")
   }
 
   async function handleSaveMinimaxApiKey() {
@@ -451,6 +463,70 @@ export default function GapYearPilotDashboard() {
       setMinimaxApiKeyError(err.message || "保存失败，请重试")
     } finally {
       setMinimaxApiKeyLoading(false)
+    }
+  }
+
+  // --- 定时提醒函数 ---
+  async function handleSaveReminderSettings() {
+    if (!user) {
+      setReminderError("用户未登录，请刷新页面")
+      return
+    }
+
+    // 验证 webhook URL
+    if (reminderEnabled && !reminderWebhookUrl.trim()) {
+      setReminderError("请填写 Webhook 地址")
+      return
+    }
+
+    if (reminderEnabled && !isValidUrl(reminderWebhookUrl)) {
+      setReminderError("请输入有效的 Webhook URL")
+      return
+    }
+
+    setReminderError("")
+    setReminderLoading(true)
+
+    try {
+      const { error: updateError } = await supabase
+        .from("user_settings")
+        .update({
+          reminder_enabled: reminderEnabled,
+          reminder_webhook_url: reminderEnabled ? reminderWebhookUrl.trim() : null,
+          reminder_time: reminderTime,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id)
+
+      if (updateError) {
+        // 尝试插入新记录
+        const { error: insertError } = await supabase
+          .from("user_settings")
+          .insert({
+            user_id: user.id,
+            reminder_enabled: reminderEnabled,
+            reminder_webhook_url: reminderEnabled ? reminderWebhookUrl.trim() : null,
+            reminder_time: reminderTime
+          })
+
+        if (insertError) throw insertError
+      }
+
+      setReminderSuccess(true)
+      setTimeout(() => setReminderSuccess(false), 2000)
+    } catch (err: any) {
+      setReminderError(err.message || "保存失败，请重试")
+    } finally {
+      setReminderLoading(false)
+    }
+  }
+
+  function isValidUrl(string: string): boolean {
+    try {
+      new URL(string)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -574,6 +650,84 @@ export default function GapYearPilotDashboard() {
                       disabled={minimaxApiKeyLoading || !minimaxApiKey}
                     >
                       {minimaxApiKeyLoading ? "保存中..." : "保存 API 配置"}
+                    </Button>
+                  </div>
+
+                  <hr className="border-muted" />
+
+                  {/* 定时提醒配置 */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-sm font-medium">每日提醒</label>
+                        <p className="text-xs text-muted-foreground">
+                          如果当天没有记录日志，将自动推送提醒
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={reminderEnabled}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          reminderEnabled ? "bg-primary" : "bg-muted"
+                        }`}
+                        onClick={() => setReminderEnabled(!reminderEnabled)}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            reminderEnabled ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {reminderEnabled && (
+                      <>
+                        <div>
+                          <label className="text-sm font-medium">Webhook 地址</label>
+                          <p className="text-xs text-muted-foreground">
+                            支持企业微信、钉钉、飞书等机器人 Webhook
+                          </p>
+                          <Input
+                            type="url"
+                            value={reminderWebhookUrl}
+                            onChange={(e) => setReminderWebhookUrl(e.target.value)}
+                            placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">提醒时间</label>
+                          <select
+                            value={reminderTime}
+                            onChange={(e) => setReminderTime(e.target.value)}
+                            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          >
+                            <option value="20:00">20:00</option>
+                            <option value="21:00">21:00</option>
+                            <option value="22:00">22:00</option>
+                            <option value="23:00">23:00</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    {reminderError && (
+                      <div className="p-2 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg">
+                        {reminderError}
+                      </div>
+                    )}
+                    {reminderSuccess && (
+                      <div className="p-2 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-lg">
+                        保存成功！
+                      </div>
+                    )}
+                    <Button
+                      className="w-full"
+                      onClick={handleSaveReminderSettings}
+                      disabled={reminderLoading}
+                    >
+                      {reminderLoading ? "保存中..." : "保存提醒设置"}
                     </Button>
                   </div>
 
