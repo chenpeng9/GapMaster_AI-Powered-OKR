@@ -107,7 +107,7 @@ serve(async (req: Request) => {
 
         try {
           // 企业微信 markdown_v2 格式
-          const message = "🎯 GapMaster 提醒\n\n今天还没有记录日志，记得打卡哦！\n\n<a href=\"https://gapmaster.zeabur.app/login\">👉 点击前往打卡</a>"
+          const message = "🎯 GapMaster 提醒\n\n今天还没有记录日志，记得打卡哦！\n\n<a href=\"https://gapmaster.eiden.top/\">👉 点击前往打卡</a>"
           const webhookResponse = await fetch(user.reminder_webhook_url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

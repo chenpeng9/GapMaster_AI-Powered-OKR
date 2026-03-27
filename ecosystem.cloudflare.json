@@ -1,0 +1,7 @@
+{
+  "apps": [{
+    "name": "gapmaster-cloudflare",
+    "script": "cloudflared tunnel run --url http://localhost:8000 gapmaster",
+    "cwd": "/Users/eiden/Documents/Projects/GapMaster"
+  }]
+}
