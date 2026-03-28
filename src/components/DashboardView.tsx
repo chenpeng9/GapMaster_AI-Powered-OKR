@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect, useRef, memo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -85,7 +85,7 @@ export interface DashboardViewProps {
   onSyncToWechat?: (log: any) => void
 }
 
-export function DashboardView({
+export const DashboardView = memo(function DashboardView({
   objectivesList,
   objectives,
   feed,
@@ -118,6 +118,24 @@ export function DashboardView({
       setLocalOkrFilter(filter)
     }
   }
+
+  // 处理 Objective 点击 - 使用 useCallback 优化
+  const handleObjectiveClick = useCallback((objId: number, isObjectiveSelected: boolean) => {
+    if (isObjectiveSelected) {
+      setOkrFilter({ type: null, id: null })
+    } else {
+      setOkrFilter({ type: "O", id: objId })
+    }
+  }, [setOkrFilter])
+
+  // 处理 KR 点击 - 使用 useCallback 优化
+  const handleKRClick = useCallback((krId: number, isKRSelected: boolean) => {
+    if (isKRSelected) {
+      setOkrFilter({ type: null, id: null })
+    } else {
+      setOkrFilter({ type: "KR", id: krId })
+    }
+  }, [setOkrFilter])
 
   // --- 语音识别状态与逻辑 ---
   const [isListening, setIsListening] = useState(false)
@@ -309,13 +327,7 @@ export function DashboardView({
                 >
                   <CardHeader
                     className="pb-3 cursor-pointer select-none hover:bg-muted/30 rounded-t-xl transition-all duration-200"
-                    onClick={() => {
-                      if (isObjectiveSelected) {
-                        setOkrFilter({ type: null, id: null })
-                      } else {
-                        setOkrFilter({ type: "O", id: obj.id })
-                      }
-                    }}
+                    onClick={() => handleObjectiveClick(obj.id, isObjectiveSelected)}
                   >
                     <div className="flex flex-col md:flex-row md:items-center items-start gap-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -379,13 +391,7 @@ export function DashboardView({
                               className={`flex flex-col md:flex-row md:items-center items-start gap-2 md:gap-4 py-1.5 first:pt-0 last:pb-0 cursor-pointer select-none rounded transition-colors ${
                                 isKRSelected ? "bg-muted/50" : "hover:bg-muted/30"
                               }`}
-                              onClick={() => {
-                                if (isKRSelected) {
-                                  setOkrFilter({ type: null, id: null })
-                                } else {
-                                  setOkrFilter({ type: "KR", id: kr.id })
-                                }
-                              }}
+                              onClick={() => handleKRClick(kr.id, isKRSelected)}
                             >
                               <span className="w-full md:w-1/2 pr-2 text-sm text-muted-foreground break-words whitespace-normal font-medium">
                                 {kr.title}
@@ -541,7 +547,7 @@ export function DashboardView({
           ) : filteredFeed.length === 0 ? (
             <div className="text-center text-muted-foreground py-12 text-sm bg-muted/20 rounded-xl border border-dashed border-border/40">
               <div className="flex flex-col items-center gap-2">
-                <svg className="w-10 h-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-10 h-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p>暂无记录，开始你的第一条记录吧</p>
@@ -676,4 +682,4 @@ export function DashboardView({
       </Dialog>
     </>
   )
-}
+})

@@ -331,35 +331,43 @@
 }
 
 .score-badge-high {
-  @apply bg-emerald-100 text-emerald-700;
+  background-color: rgba(21, 128, 61, 0.1);
+  color: var(--score-high);
 }
 
 .score-badge-medium {
-  @apply bg-blue-100 text-blue-700;
+  background-color: rgba(29, 78, 216, 0.1);
+  color: var(--score-medium);
 }
 
 .score-badge-low {
-  @apply bg-amber-100 text-amber-700;
+  background-color: rgba(180, 83, 9, 0.1);
+  color: var(--score-low);
 }
 
 .score-badge-none {
-  @apply bg-red-100 text-red-700;
+  background-color: rgba(185, 28, 28, 0.1);
+  color: var(--score-none);
 }
 
 .dark .score-badge-high {
-  @apply bg-emerald-900/50 text-emerald-400;
+  background-color: rgba(21, 128, 61, 0.3);
+  color: #4ade80;
 }
 
 .dark .score-badge-medium {
-  @apply bg-blue-900/50 text-blue-400;
+  background-color: rgba(29, 78, 216, 0.3);
+  color: #60a5fa;
 }
 
 .dark .score-badge-low {
-  @apply bg-amber-900/50 text-amber-400;
+  background-color: rgba(180, 83, 9, 0.3);
+  color: #fbbf24;
 }
 
 .dark .score-badge-none {
-  @apply bg-red-900/50 text-red-400;
+  background-color: rgba(185, 28, 28, 0.3);
+  color: #f87171;
 }
 
 /* ========== 进度条样式 ========== */

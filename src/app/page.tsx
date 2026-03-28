@@ -573,7 +573,6 @@ export default function GapYearPilotDashboard() {
   return (
     <main className="min-h-screen bg-background relative">
       {/* 精致的背景装饰 */}
-      <div className="fixed inset-0 gradient-subtle pointer-events-none" />
       <div className="fixed inset-0 gradient-radial pointer-events-none" />
 
       <div className="mx-auto max-w-3xl px-4 py-12 relative">
@@ -668,6 +667,7 @@ export default function GapYearPilotDashboard() {
                         type="button"
                         role="switch"
                         aria-checked={reminderEnabled}
+                        aria-label={reminderEnabled ? "每日提醒已启用" : "每日提醒已禁用"}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           reminderEnabled ? "bg-primary" : "bg-muted"
                         }`}
@@ -737,7 +737,7 @@ export default function GapYearPilotDashboard() {
                   <div>
                     <h3 className="text-sm font-medium mb-3">修改密码</h3>
                     {passwordError && (
-                      <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg mb-3">
+                      <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-950/50 rounded-lg mb-3" role="alert">
                         {passwordError}
                       </div>
                     )}
@@ -747,8 +747,9 @@ export default function GapYearPilotDashboard() {
                       </div>
                     )}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">当前密码</label>
+                      <label htmlFor="current-password" className="text-sm font-medium">当前密码</label>
                       <Input
+                        id="current-password"
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
@@ -756,8 +757,9 @@ export default function GapYearPilotDashboard() {
                       />
                     </div>
                     <div className="space-y-2 mt-2">
-                      <label className="text-sm font-medium">新密码</label>
+                      <label htmlFor="new-password" className="text-sm font-medium">新密码</label>
                       <Input
+                        id="new-password"
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
@@ -765,8 +767,9 @@ export default function GapYearPilotDashboard() {
                       />
                     </div>
                     <div className="space-y-2 mt-2">
-                      <label className="text-sm font-medium">确认新密码</label>
+                      <label htmlFor="confirm-password" className="text-sm font-medium">确认新密码</label>
                       <Input
+                        id="confirm-password"
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
