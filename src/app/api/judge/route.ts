@@ -1,18 +1,8 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { createClient } from "@supabase/supabase-js";
 
-// 1. 环境检查：本地开发走 Clash 代理，线上环境直连
-if (process.env.NODE_ENV === "development") {
-  console.log("Detected development environment, setting up proxy...");
-  const proxyAgent = new ProxyAgent("http://127.0.0.1:7890");
-  setGlobalDispatcher(proxyAgent);
-} else {
-  console.log("Detected production environment, connecting directly to DeepSeek...");
-}
-
-// 2. 初始化 DeepSeek (兼容 OpenAI API)
+// 初始化 DeepSeek (兼容 OpenAI API)
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
   baseURL: "https://api.deepseek.com"

@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// 创建服务器端 Supabase 客户端
-function getSupabaseServerClient() {
+// 创建服务器端 Supabase 客户端（带 token 以支持 RLS）
+function getSupabaseServerClient(accessToken?: string) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    accessToken ? {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } }
+    } : undefined
   );
 }
 
@@ -15,22 +18,22 @@ async function verifyAuth(request: Request) {
 
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) {
-    return { error: "Missing authorization header", user: null };
+    return { error: "Missing authorization header", user: null, token: null };
   }
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) {
-    return { error: error?.message || "Invalid token", user: null };
+    return { error: error?.message || "Invalid token", user: null, token: null };
   }
 
-  return { error: null, user };
+  return { error: null, user, token };
 }
 
 // GET - 获取指定周的所有版本
 export async function GET(req: Request) {
-  const { error: authError, user } = await verifyAuth(req);
+  const { error: authError, user, token } = await verifyAuth(req);
 
   if (authError || !user) {
     return NextResponse.json(
@@ -50,7 +53,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabaseServerClient(token);
 
     // 获取该周所有版本
     const { data, error } = await supabase

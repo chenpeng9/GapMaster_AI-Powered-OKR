@@ -1,26 +1,21 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { createClient } from "@supabase/supabase-js";
 
-// 1. 环境检查：本地开发走 Clash 代理，线上环境直连
-if (process.env.NODE_ENV === "development") {
-  console.log("Detected development environment, setting up proxy...");
-  const proxyAgent = new ProxyAgent("http://127.0.0.1:7890");
-  setGlobalDispatcher(proxyAgent);
-}
-
-// 2. 初始化 DeepSeek (兼容 OpenAI API)
+// 初始化 DeepSeek (兼容 OpenAI API)
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
   baseURL: "https://api.deepseek.com"
 });
 
-// 3. 创建服务器端 Supabase 客户端（使用 service role 绕过 RLS 限制）
-function getSupabaseServerClient() {
+// 3. 创建服务器端 Supabase 客户端（带 token 以支持 RLS）
+function getSupabaseServerClient(accessToken?: string) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    accessToken ? {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } }
+    } : undefined
   );
 }
 
@@ -31,17 +26,17 @@ async function verifyAuth(request: Request) {
   // 从请求头获取 token
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) {
-    return { error: "Missing authorization header", user: null };
+    return { error: "Missing authorization header", user: null, token: null };
   }
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) {
-    return { error: error?.message || "Invalid token", user: null };
+    return { error: error?.message || "Invalid token", user: null, token: null };
   }
 
-  return { error: null, user };
+  return { error: null, user, token };
 }
 
 // 5. 获取周的开始和结束日期
@@ -69,7 +64,7 @@ function formatDateShort(dateStr: string): string {
 
 // GET - 获取指定周的洞察
 export async function GET(req: Request) {
-  const { error: authError, user } = await verifyAuth(req);
+  const { error: authError, user, token } = await verifyAuth(req);
 
   if (authError || !user) {
     return NextResponse.json(
@@ -89,7 +84,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabaseServerClient(token);
 
     // 获取该周最新版本的洞察
     const { data, error } = await supabase
@@ -123,7 +118,7 @@ export async function GET(req: Request) {
 
 // POST - 生成或更新周洞察
 export async function POST(req: Request) {
-  const { error: authError, user } = await verifyAuth(req);
+  const { error: authError, user, token } = await verifyAuth(req);
 
   if (authError || !user) {
     return NextResponse.json(
@@ -143,7 +138,7 @@ export async function POST(req: Request) {
     }
 
     // 检查每日 AI 洞察限制（每人每天最多 1 次）
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabaseServerClient(token);
     const today = new Date().toISOString().split('T')[0];
     const { data: userSettings } = await supabase
       .from("user_settings")
