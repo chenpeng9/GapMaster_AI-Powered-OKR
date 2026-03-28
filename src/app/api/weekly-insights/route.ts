@@ -16,19 +16,11 @@ const deepseek = new OpenAI({
   baseURL: "https://api.deepseek.com"
 });
 
-// 3. 创建服务器端 Supabase 客户端
+// 3. 创建服务器端 Supabase 客户端（使用 service role 绕过 RLS 限制）
 function getSupabaseServerClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-
-// 4. 创建服务端客户端（绕过RLS，用于写入数据）
-function getSupabaseServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 }
 
@@ -150,8 +142,25 @@ export async function POST(req: Request) {
       );
     }
 
+    // 检查每日 AI 洞察限制（每人每天最多 1 次）
     const supabase = getSupabaseServerClient();
-    const supabaseAdmin = getSupabaseServiceClient();
+    const today = new Date().toISOString().split('T')[0];
+    const { data: userSettings } = await supabase
+      .from("user_settings")
+      .select("daily_insight_used, daily_insight_date")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const insightUsedToday =
+      userSettings?.daily_insight_date === today && userSettings?.daily_insight_used === true;
+
+    if (insightUsedToday) {
+      return NextResponse.json(
+        { error: "daily_insight_limit_exceeded", message: "今日已生成过 AI 洞察，每天仅限使用 1 次，明天再来吧。" },
+        { status: 429 }
+      );
+    }
+
     const { week_start: ws, week_end: we } = getWeekRange(week_start);
 
     // 获取上周的数据作为参考
@@ -278,8 +287,8 @@ ${statsStr}
       ? (existingVersions[0].version + 1)
       : 1;
 
-    // 插入新版本（使用服务端客户端绕过RLS）
-    const { data: insertedData, error: insertError } = await supabaseAdmin
+    // 插入新版本
+    const { data: insertedData, error: insertError } = await supabase
       .from("weekly_insights")
       .insert({
         user_id: user.id,
@@ -298,6 +307,21 @@ ${statsStr}
       .single();
 
     if (insertError) throw insertError;
+
+    // 更新今日 AI 洞察使用记录
+    if (userSettings) {
+      await supabase.from("user_settings").update({
+        daily_insight_used: true,
+        daily_insight_date: today,
+        updated_at: new Date().toISOString()
+      }).eq("user_id", user.id);
+    } else {
+      await supabase.from("user_settings").insert({
+        user_id: user.id,
+        daily_insight_used: true,
+        daily_insight_date: today
+      });
+    }
 
     return NextResponse.json(insertedData);
 

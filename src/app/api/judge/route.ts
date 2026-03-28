@@ -60,6 +60,37 @@ export async function POST(req: Request) {
   try {
     const { content, objectives } = await req.json();
 
+    // 检查每日日志限制（每人每天最多5次）
+    const supabase = getSupabaseServerClient();
+    const today = new Date().toISOString().split('T')[0];
+    const { data: userSettings } = await supabase
+      .from("user_settings")
+      .select("daily_log_count, daily_log_date")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let dailyLogCount = 0;
+    const settingsUpdates: any = {};
+
+    if (userSettings) {
+      // 检查是否是新的一天
+      if (userSettings.daily_log_date !== today) {
+        dailyLogCount = 0;
+        settingsUpdates.daily_log_count = 0;
+        settingsUpdates.daily_log_date = today;
+      } else {
+        dailyLogCount = userSettings.daily_log_count || 0;
+      }
+    }
+
+    // 检查是否超过每日限制
+    if (dailyLogCount >= 5) {
+      return NextResponse.json(
+        { error: "daily_limit_exceeded", message: "今日已提交5次日志，请明天再试。合理限制有助于保持记录质量。" },
+        { status: 429 }
+      );
+    }
+
     // 3. 构建结构化的 OKR 上下文
     let okrContextString = "";
     if (Array.isArray(objectives) && objectives.length > 0) {

@@ -136,6 +136,7 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
   const [generatingInsight, setGeneratingInsight] = useState(false)
   const [selectedVersion, setSelectedVersion] = useState<any>(null)
   const [versionsDialogOpen, setVersionsDialogOpen] = useState(false)
+  const [insightError, setInsightError] = useState<string | null>(null)
 
   // 初始化可用周列表
   useEffect(() => {
@@ -174,6 +175,7 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
   async function handleGenerateInsight() {
     if (!user?.id || generatingInsight) return
 
+    setInsightError(null)
     setGeneratingInsight(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -225,11 +227,11 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
         setSelectedVersion(data)
       } else {
         const error = await resp.json()
-        alert(error.error || "生成失败，请重试")
+        setInsightError(error.message || "生成失败，请重试")
       }
     } catch (e) {
       console.error("Generate insight error:", e)
-      alert("生成失败，请重试")
+      setInsightError("生成失败，请重试")
     } finally {
       setGeneratingInsight(false)
     }
@@ -266,6 +268,7 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
   // 周切换
   function handleWeekChange(week: WeekInfo) {
     setSelectedWeek(week)
+    setInsightError(null)
   }
 
   // 计算统计数据
@@ -500,9 +503,15 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
           {!selectedVersion ? (
             <div className="text-center py-8">
               <Sparkles className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">
-                点击下方按钮，让AI分析本周执行情况
-              </p>
+              {insightError ? (
+                <p className="text-sm text-amber-600 bg-amber-50 px-3 py-2.5 rounded-lg mb-4 leading-relaxed break-words w-full">
+                  {insightError}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-4">
+                  点击下方按钮，让AI分析本周执行情况
+                </p>
+              )}
               <Button onClick={handleGenerateInsight} disabled={generatingInsight}>
                 {generatingInsight ? (
                   <>
@@ -599,6 +608,11 @@ export function AnalyticsView({ feed, objectives }: AnalyticsViewProps) {
                   </Button>
                 </div>
               </div>
+              {insightError && (
+                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2.5 rounded-lg mt-3 leading-relaxed break-words">
+                  {insightError}
+                </p>
+              )}
             </div>
           )}
         </CardContent>

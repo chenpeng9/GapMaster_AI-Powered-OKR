@@ -83,6 +83,9 @@ export interface DashboardViewProps {
   onFilterChange?: (filter: { type: "O" | "KR" | null; id: number | null }) => void
   // 同步公众号
   onSyncToWechat?: (log: any) => void
+  // 每日限制
+  submitError?: string | null
+  dailyLogCount?: number
 }
 
 export const DashboardView = memo(function DashboardView({
@@ -104,6 +107,8 @@ export const DashboardView = memo(function DashboardView({
   feedFilter,
   onFilterChange,
   onSyncToWechat,
+  submitError,
+  dailyLogCount = 0,
 }: DashboardViewProps) {
   // 使用父组件传入的过滤条件，如果没有则使用本地状态
   const [localOkrFilter, setLocalOkrFilter] = useState<OkrFilterType>({ type: null, id: null })
@@ -463,12 +468,23 @@ export const DashboardView = memo(function DashboardView({
             </div>
           )}
         </div>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex-1">
+            {submitError ? (
+              <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
+                {submitError}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground/60">
+                今日已提交 {dailyLogCount}/5 次
+              </p>
+            )}
+          </div>
           <Button
             size="sm"
             className="gap-2 px-6 rounded-lg bg-primary hover:bg-primary/90 transition-all duration-200 hover:shadow-md"
             onClick={onSubmit}
-            disabled={judging || !capture.trim()}
+            disabled={judging || !capture.trim() || dailyLogCount >= 5}
           >
             {judging ? (
               <>

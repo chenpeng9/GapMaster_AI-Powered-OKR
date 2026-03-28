@@ -33,6 +33,8 @@ export default function GapYearPilotDashboard() {
   const [judging, setJudging] = useState(false)
   const [loadingFeed, setLoadingFeed] = useState(true)
   const [objectives, setObjectives] = useState<any[]>([])
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [dailyLogCount, setDailyLogCount] = useState(0)
 
   // --- 分页状态 ---
   const [page, setPage] = useState(1)
@@ -240,6 +242,29 @@ export default function GapYearPilotDashboard() {
       return
     }
 
+    // 检查每日日志限制
+    if (!user?.id) return
+    setSubmitError(null)
+    const today = new Date().toISOString().split('T')[0];
+    const { data: userSettings } = await supabase
+      .from("user_settings")
+      .select("daily_log_count, daily_log_date")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let currentDailyCount = 0;
+    if (userSettings) {
+      if (userSettings.daily_log_date === today) {
+        currentDailyCount = userSettings.daily_log_count || 0;
+      }
+    }
+
+    if (currentDailyCount >= 5) {
+      setSubmitError("今日已提交 5 次日志，请明天再试。")
+      return
+    }
+    setDailyLogCount(currentDailyCount)
+
     setJudging(true)
     try {
       const resp = await fetch("/api/judge", {
@@ -282,6 +307,23 @@ export default function GapYearPilotDashboard() {
 
       if (!error && insertedRows && insertedRows.length) {
         setFeed((prev) => [insertedRows[0], ...prev])
+
+        // 更新每日日志计数
+        const newCount = currentDailyCount + 1;
+        setDailyLogCount(newCount)
+        if (userSettings) {
+          await supabase.from("user_settings").update({
+            daily_log_count: newCount,
+            daily_log_date: today,
+            updated_at: new Date().toISOString()
+          }).eq("user_id", user.id)
+        } else {
+          await supabase.from("user_settings").insert({
+            user_id: user.id,
+            daily_log_count: newCount,
+            daily_log_date: today
+          })
+        }
 
         // 3. 严格审计加分：只有出现在 achieved_kr_ids 中的 KR 才执行进度 +1
         if (data.achieved_kr_ids && data.achieved_kr_ids.length > 0) {
@@ -851,6 +893,8 @@ export default function GapYearPilotDashboard() {
               feedFilter={feedFilter}
               onFilterChange={handleFilterChange}
               onSyncToWechat={handleSyncToWechat}
+              submitError={submitError}
+              dailyLogCount={dailyLogCount}
             />
           </TabsContent>
 
